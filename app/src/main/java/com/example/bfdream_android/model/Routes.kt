@@ -1,20 +1,13 @@
 package com.example.bfdream_android.model
 
-sealed class Routes(
-    val route: String,
-    val isRoot: Boolean = false,
-) {
-    data object Splash: Routes("Splash")
-    data object Onboard: Routes("Onboard")
-    data object Main: Routes("Main", true)
+sealed class Routes(val route: String) {
+    // 1. 최상위 경로
+    data object Splash : Routes("splash")
+    data object Onboard : Routes("onboard")
+    data object MainRoot : Routes("main_root") // 메인 화면, 도움말, 내 정보를 포함하는 그래프
 
-    companion object {
-        fun getRoutes(route: String): Routes {
-            return when {
-                route == Splash.route -> Splash
-                route == Onboard.route -> Onboard
-                else -> Main
-            }
-        }
-    }
+    // 2. MainRoot 그래프 내부 경로
+    data object Main : Routes("main")
+    data object Help : Routes("help")
+    data object Info : Routes("info")
 }
