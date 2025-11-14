@@ -1,5 +1,10 @@
 package com.example.bfdream_android.components
 
+import android.Manifest
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,11 +15,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -69,12 +76,59 @@ fun OnboardScreen(
             "임산부들만 이용가능",
             "임산부",
             0xFFFFC0CB,
-            "임산부 신고 후, 해당 서비스를 이용하실 수 있습니다.\n임산부 신고는 e보건소 혹은 직접 방문, 아이마중 어플 등을 통해 \n가능합니다."
+            "임산부 신고 후, 해당 서비스를 이용하실 수 있습니다.\n임산부 신고는 e보건소 혹은 직접 방문, 아이마중 어플\n등을 통해 가능합니다."
+        ),
+        OnboardPageData(
+            R.drawable.info_logo,
+            "맘편한 이동을 위한\n필수 접근권한 안내",
+            "맘편한 이동",
+            0xFF5409DA,
+            isLast = true,
         )
     )
 
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val scope = rememberCoroutineScope()
+
+    val context = LocalContext.current
+
+    // 1. 요청할 권한 목록 정의
+    val permissionsToRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        // 안드로이드 12 (API 31) 이상
+        arrayOf(
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    } else {
+        // 안드로이드 11 (API 30) 이하
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+            // BLUETOOTH, BLUETOOTH_ADMIN은 install-time 권한 (보통)
+        )
+    }
+
+    // 2. 권한 요청 런처 생성
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = { permissions ->
+            // 3. 권한 요청 결과 처리
+            val allPermissionsGranted = permissions.values.all { it }
+            if (allPermissionsGranted) {
+                // 모든 권한이 허용되었으면 onComplete (메인 화면 이동)
+                Toast.makeText(context, "권한이 허용되었습니다.", Toast.LENGTH_SHORT).show()
+                onComplete()
+            } else {
+                // 권한이 하나라도 거부되었을 때
+                // 사용자에게 권한이 꼭 필요하다고 알려주는 것이 좋습니다. (예: Toast, Dialog)
+                Toast.makeText(context, "앱 기능 사용을 위해 권한 허용이 필요합니다.", Toast.LENGTH_LONG).show()
+                // (참고) 여기서 바로 onComplete()를 호출하면 권한 없이 메인으로 넘어갑니다.
+                // onComplete()
+            }
+        }
+    )
 
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFFA1ACF9)),
@@ -98,13 +152,20 @@ fun OnboardScreen(
         // 버튼
         if (pagerState.currentPage == pages.size - 1) {
             Button(
-                onClick = onComplete,
+                onClick = { permissionLauncher.launch(permissionsToRequest) },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF5409DA),
                     contentColor = Color.White
-                )
+                ),
+                modifier = Modifier.width(160.dp).height(60.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Text(text = "시작하기")
+                Text(
+                    text = "시작하기",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
             }
         } else {
             Button(
@@ -116,9 +177,16 @@ fun OnboardScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF5409DA).copy(alpha = 0.6f),
                     contentColor = Color.White,
-                )
+                ),
+                modifier = Modifier.width(160.dp).height(60.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Text(text = "시작하기")
+                Text(
+                    text = "시작하기",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
             }
         }
 
@@ -132,25 +200,18 @@ data class OnboardPageData(
     val title: String,
     val titleHighlight: String,
     val highlightColor: Long,
-    val description: String
+    val description: String = "",
+    val isLast: Boolean = false,
 )
 
 // 개별 온보딩 페이지 UI
 @Composable
 fun OnboardPage(data: OnboardPageData) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Image(
-            painter = painterResource(id = data.image),
-            contentDescription = data.title,
-            modifier = Modifier.size(350.dp)
-        )
-
         val annotatedString = buildAnnotatedString {
             append(data.title)
             // 1. 전체 텍스트를 흰색으로 설정
@@ -171,23 +232,105 @@ fun OnboardPage(data: OnboardPageData) {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = annotatedString,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            fontSize = 32.sp,
-        )
+        if (data.isLast) {
+            Image(
+                painter = painterResource(id = data.image),
+                contentDescription = data.title,
+                modifier = Modifier.size(170.dp)
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = data.description,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            color = Color.White,
-            fontSize = 13.sp
-        )
+            Spacer(modifier = Modifier.height(28.dp))
+            Text(
+                text = annotatedString,
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                fontSize = 36.sp,
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+            Row(
+                modifier = Modifier.width(250.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.location),
+                        contentDescription = "위치 아이콘",
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Text(
+                        text = "위치",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp,
+                        color = Color.White,
+                    )
+                    Text(
+                        text = "현재 버스정류장 및\n탑승할 버스 안내",
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        fontSize = 12.sp,
+                        color = Color.White,
+                    )
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.bluetooth),
+                        contentDescription = "블루투스 아이콘",
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Text(
+                        text = "근처 기기",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp,
+                        color = Color.White,
+                    )
+                    Text(
+                        text = "버스 내부 배려석 알림\n기기 통신",
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        fontSize = 12.sp,
+                        color = Color.White,
+                    )
+                }
+            }
+        } else {
+            Image(
+                painter = painterResource(id = data.image),
+                contentDescription = data.title,
+                modifier = Modifier.size(350.dp)
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+            Text(
+                text = annotatedString,
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                fontSize = 36.sp,
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = data.description,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = Color.White,
+                fontSize = 16.sp
+            )
+        }
     }
 }
 

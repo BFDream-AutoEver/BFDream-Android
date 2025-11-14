@@ -2,6 +2,7 @@ package com.example.bfdream_android.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -9,13 +10,14 @@ import androidx.navigation.navigation
 import com.example.bfdream_android.components.OnboardScreen
 import com.example.bfdream_android.components.SplashScreen
 import com.example.bfdream_android.model.Routes
+import com.example.bfdream_android.viewmodel.OnboardingViewModel
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    // 실제 앱에서는 DataStore/ViewModel을 통해 첫 실행 여부를 주입받아야 합니다.
-    // 여기서는 Splash에서 자체적으로 로직을 처리하도록 합니다.
+    // NavGraph 레벨에서 ViewModel을 생성하여 하위 컴포저블에 전달
+    onboardingViewModel: OnboardingViewModel = viewModel()
 ) {
     NavHost(
         navController = navController,
@@ -25,6 +27,8 @@ fun NavGraph(
         // 1. 스플래시 화면
         composable(Routes.Splash.route) {
             SplashScreen(
+                // ViewModel을 SplashScreen에 전달
+                viewModel = onboardingViewModel,
                 onGoToOnboarding = {
                     navController.navigate(Routes.Onboard.route) {
                         popUpTo(Routes.Splash.route) { inclusive = true }
@@ -42,7 +46,10 @@ fun NavGraph(
         composable(Routes.Onboard.route) {
             OnboardScreen(
                 onComplete = {
-                    // 실제 앱에서는 여기서 DataStore에 온보딩 완료 저장
+                    // 1. ViewModel을 통해 "온보딩 완료" 플래그 저장
+                    onboardingViewModel.setOnboardingCompleted()
+
+                    // 2. 메인으로 이동
                     navController.navigate(Routes.MainRoot.route) {
                         popUpTo(Routes.Onboard.route) { inclusive = true }
                     }
@@ -50,7 +57,7 @@ fun NavGraph(
             )
         }
 
-        // 3. 메인 내비게이션 그래프 (메인, 도움말, 내 정보)
+        // 3. 메인 내비게이션 그래프 (이하 동일)
         navigation(
             startDestination = Routes.Main.route,
             route = Routes.MainRoot.route
