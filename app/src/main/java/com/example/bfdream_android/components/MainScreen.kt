@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -42,9 +43,12 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -55,6 +59,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bfdream_android.R
@@ -67,34 +72,54 @@ import kotlinx.coroutines.launch
 fun MainScreen(
     onNavigateToHelp: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    btViewModel: BTViewModel = viewModel( // 수정: ViewModel 타입 및 이름 변경
+    btViewModel: BTViewModel = viewModel(
         factory = BTViewModelFactory(LocalContext.current.applicationContext)
     )
 ) {
-    val selectedBusId by btViewModel.selectedBusId.collectAsState() // 수정: ViewModel 인스턴스 이름 변경
-    val connectionState by btViewModel.connectionState.collectAsState() // 수정: ViewModel 인스턴스 이름 변경
-    val isSending by btViewModel.isSending.collectAsState() // 수정: ViewModel 인스턴스 이름 변경
+    val selectedBusId by btViewModel.selectedBusId.collectAsState()
+    val connectionState by btViewModel.connectionState.collectAsState()
+    val isSending by btViewModel.isSending.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // --- State -> Snackbar 메시지 표시 로직 ---
+    // --- [수정] 확인 모달 상태 변수만 남깁니다. ---
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    // var showFailureDialog by remember { mutableStateOf(false) } // [수정] 이 변수 제거
+
+    // --- 선택된 버스 번호를 찾기 위한 로직 (유지) ---
+    val selectedBusInfo: BusInfo? by remember(selectedBusId) {
+        derivedStateOf {
+            if (selectedBusId == null) {
+                null
+            } else {
+                mockBusStops.firstOrNull()
+                    ?.buses
+                    ?.find { it.id == selectedBusId }
+            }
+        }
+    }
+
+
+    // --- [수정] State -> Snackbar/Modal 메시지 표시 로직 ---
+    // LaunchedEffect는 이제 스낵바 메시지(성공/진행)만 처리합니다.
     LaunchedEffect(connectionState) {
-        val currentState = connectionState // 스마트 캐스트를 위해 지역 변수에 저장
+        val currentState = connectionState
         val message = when (currentState) {
             is BTViewModel.BleConnectionState.Scanning -> "주변 버스 찾는 중..."
             is BTViewModel.BleConnectionState.Connecting -> "버스에 연결 중..."
             is BTViewModel.BleConnectionState.Connected -> "버스 연결됨, 알림 전송 시도..."
             is BTViewModel.BleConnectionState.Success -> "알림 전송 성공!"
-            is BTViewModel.BleConnectionState.Error -> "오류: ${currentState.message}"
-            is BTViewModel.BleConnectionState.Idle -> null // Idle 상태는 메시지 표시 안 함
+            is BTViewModel.BleConnectionState.Error -> null // [수정] Error는 여기서 처리 안 함
+            is BTViewModel.BleConnectionState.Idle -> null
         }
+
         message?.let {
             scope.launch {
                 snackbarHostState.showSnackbar(it)
-                // 성공 또는 에러 시 잠시 후 Idle 상태로 복귀
-                if (currentState is BTViewModel.BleConnectionState.Success || currentState is BTViewModel.BleConnectionState.Error) {
-                    kotlinx.coroutines.delay(2000) // 2초 대기
+                // 성공 시 딜레이 후 상태 리셋
+                if (currentState is BTViewModel.BleConnectionState.Success) {
+                    kotlinx.coroutines.delay(2000)
                     btViewModel.resetState()
                 }
             }
@@ -102,22 +127,67 @@ fun MainScreen(
     }
 
 
+    // --- 전송 확인 다이얼로그 (유지) ---
+    if (showConfirmDialog && selectedBusInfo != null) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text(text = "알림 전송 확인") },
+            text = { Text(text = "${selectedBusInfo!!.number}번 버스에 배려석 알림을 전송하시겠습니까?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        btViewModel.sendCourtesySeatNotification()
+                        showConfirmDialog = false
+                    }
+                ) { Text("확인") }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showConfirmDialog = false }
+                ) { Text("취소") }
+            }
+        )
+    }
+
+    // --- [수정] 전송 실패 다이얼로그 ---
+    // connectionState가 Error일 때 '직접' 다이얼로그를 표시합니다.
+    val currentState = connectionState // 리컴포지션 시 현재 상태 읽기
+    if (currentState is BTViewModel.BleConnectionState.Error) {
+        AlertDialog(
+            onDismissRequest = {
+                btViewModel.resetState() // 밖을 클릭해도 상태 리셋
+            },
+            title = { Text(text = "버스 배려석 알림 전송에 실패하였습니다.") },
+            // (선택사항) VM의 구체적인 에러 메시지를 표시할 수 있습니다.
+            // text = { Text(text = currentState.message) },
+            text = { Text(text = "다시 한 번 시도해주세요.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        btViewModel.resetState() // 확인 클릭 시 상태 리셋
+                    }
+                ) { Text("확인") }
+            }
+        )
+    }
+
+
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }, // 스낵바 추가
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) { // 로고와 텍스트 정렬
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(R.drawable.main_logo),
                             contentDescription = "맘편한 이동 로고",
                             modifier = Modifier.size(26.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp)) // 로고와 텍스트 간격
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "맘편한 이동",
                             fontWeight = FontWeight.Bold,
-                            color = Color.White // 흰색 텍스트
+                            color = Color.White
                         )
                     }
                 },
@@ -127,7 +197,6 @@ fun MainScreen(
                             painter = painterResource(R.drawable.main_help),
                             contentDescription = "도움말",
                             modifier = Modifier.size(26.dp)
-                            // tint 제거됨
                         )
                     }
                     IconButton(onClick = onNavigateToProfile) {
@@ -135,7 +204,6 @@ fun MainScreen(
                             painter = painterResource(R.drawable.main_info),
                             contentDescription = "앱 정보",
                             modifier = Modifier.size(26.dp)
-                            // tint 제거됨
                         )
                     }
                 },
@@ -151,95 +219,100 @@ fun MainScreen(
                 .background(Color(0xFFA1ACF9))
                 .padding(paddingValues)
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally // 자식 요소 가운데 정렬
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(24.dp)) // 상단 여백
+            Spacer(modifier = Modifier.height(24.dp))
 
             val interactionSource = remember { MutableInteractionSource() }
             val isPressed by interactionSource.collectIsPressedAsState()
 
-            // --- 버튼과 그림자를 겹치기 위한 Box ---
             Box(
-                modifier = Modifier.size(200.dp),
+                modifier = Modifier.size(240.dp),
                 contentAlignment = Alignment.Center
             ) {
                 // 1. 그림자 레이어
-                if (!isPressed && !isSending && selectedBusId != null) { // 눌리지 않았고, 전송중이 아니고, 버스가 선택되었을때만 그림자 표시
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize() // 버튼 크기와 동일하게
-                            .offset(y = 4.dp) // 그림자를 4.dp 만큼 아래로 이동
-                            .background(
-                                color = Color.Black.copy(alpha = 0.2f), // 그림자 색
-                                shape = CircleShape
-                            )
-                            .blur(radius = 10.dp) // 그림자를 흐리게
-                    )
-                }
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .offset(y = 4.dp)
+                        .background(
+                            color = Color.Black.copy(alpha = 0.2f),
+                            shape = CircleShape
+                        )
+                        .blur(radius = 10.dp)
+                )
 
                 // 2. 버튼 레이어
                 Button(
                     onClick = {
                         if (selectedBusId != null && !isSending) {
-                            btViewModel.sendCourtesySeatNotification() // 수정: ViewModel 호출
+                            showConfirmDialog = true // 확인 모달 띄우기 (유지)
                         }
                     },
-                    modifier = Modifier.fillMaxSize(), // Box 크기에 맞춤
+                    modifier = Modifier.fillMaxSize(),
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        // 비활성화 상태 색 추가 (버스 미선택 또는 전송 중)
-                        disabledContainerColor = Color.White.copy(alpha = 0.5f)
+                        containerColor = Color(0xFF4E71FF),
+                        disabledContainerColor = Color.White
                     ),
                     elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 0.dp, // 기본 그림자 0 (수동 처리)
-                        pressedElevation = 0.dp // 눌렀을 때 그림자 0
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp
                     ),
-                    interactionSource = interactionSource, // (중요) isPressed 상태 공유
-                    enabled = selectedBusId != null && !isSending // 버스 선택 & 전송 중 아닐 때만 활성화
+                    interactionSource = interactionSource,
+                    enabled = selectedBusId != null
+                            && !isSending
+                            && (currentState !is BTViewModel.BleConnectionState.Error)
                 ) {
                     if (isSending) {
-                        CircularProgressIndicator(modifier = Modifier.size(100.dp)) // 전송 중일 때 로딩 표시
+                        CircularProgressIndicator(modifier = Modifier.size(100.dp))
                     } else {
+                        val imageResource = if (selectedBusId != null) {
+                            R.drawable.main_button_selected
+                        } else {
+                            R.drawable.main_button
+                        }
+
+                        val contentDesc = if (selectedBusId != null) {
+                            "알림 발송 버튼 (활성화)"
+                        } else {
+                            "알림 발송 버튼 (비활성화 - 버스 선택 필요)"
+                        }
+
                         Image(
-                            painter = painterResource(R.drawable.main_button),
-                            contentDescription = "알림 발송 버튼",
-                            modifier = Modifier.size(180.dp) // 버튼 크기(200dp)보다 작게 설정
+                            painter = painterResource(id = imageResource),
+                            contentDescription = contentDesc,
+                            modifier = Modifier.size(280.dp)
                         )
                     }
                 }
             }
 
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(34.dp))
 
-            // 중앙 텍스트
             Text(
                 text = if (selectedBusId == null) "알림을 보낼 버스를 선택해주세요!" else "선택 완료! 알림을 울려주세요",
-                style = MaterialTheme.typography.titleMedium, // 크기 조정
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color.White // 색상 변경
+                color = Color.White
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(56.dp))
 
-            // 버스 목록 (실제 데이터 반영)
-            BusStopCard( // BusStopList 대신 직접 Card 사용
-                stop = mockBusStops.first(), // 일단 첫 번째 정류장만 표시 (추후 확장)
+            BusStopCard(
+                stop = mockBusStops.first(),
                 selectedBusId = selectedBusId,
                 onBusSelected = { busId ->
-                    btViewModel.selectBus(busId) // 수정: ViewModel 호출
+                    btViewModel.selectBus(busId)
                 },
                 onRefresh = { /* TODO: 새로고침 로직 */ }
             )
-
-            // LazyColumn은 Column 바로 아래에 직접 사용 권장되지 않음 (스크롤 문제)
-            // 필요 시 BoxWithConstraints 등을 사용
         }
     }
 }
 
-// --- 목업 데이터 및 실제 컴포저블 ---
+// --- 목업 데이터 및 실제 컴포저블 (이하 동일) ---
 
 // 데이터 클래스 (실제 앱에서는 API 등에서 가져와야 함)
 data class BusInfo(val id: String, val number: String, val color: Color, val arrivalTime: String? = null)
@@ -269,14 +342,13 @@ fun BusStopCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp), // 그림자 살짝 추가
         shape = RoundedCornerShape(16.dp), // 모서리 둥글게
         colors = CardDefaults.cardColors(containerColor = Color.White) // 카드 배경 흰색
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(top = 13.dp)) {
             // 헤더 (정류장 이름, 방향, 새로고침 버튼)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(start = 25.dp, end = 25.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -285,11 +357,13 @@ fun BusStopCard(
                         text = stop.name,
                         style = MaterialTheme.typography.titleLarge, // 크기 키움
                         fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
                         color = Color.Black // 검은색
                     )
                     Text(
-                        text = stop.direction,
+                        text = "사용자와 최근접의 버스정류장 정보가 표시됩니다.",
                         style = MaterialTheme.typography.bodyMedium,
+                        fontSize = 12.sp,
                         color = Color.Gray // 회색
                     )
                 }

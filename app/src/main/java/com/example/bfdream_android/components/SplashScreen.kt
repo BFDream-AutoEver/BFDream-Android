@@ -1,6 +1,5 @@
 package com.example.bfdream_android.components
 
-import android.app.Application
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -14,10 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.bfdream_android.R
-import com.example.bfdream_android.ui.theme.BFDreamAndroidTheme
 import com.example.bfdream_android.viewmodel.OnboardingViewModel
 import com.example.bfdream_android.viewmodel.SplashDestination
 
@@ -49,18 +46,6 @@ fun SplashScreen(
             painter = painterResource(id = R.drawable.splash),
             contentDescription = "맘편한 이동, 예비 엄마의 마음 편한 이동",
             modifier = Modifier.size(280.dp)
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SplashPreview() {
-    BFDreamAndroidTheme {
-        SplashScreen(
-            viewModel = OnboardingViewModel(Application()),
-            onGoToOnboarding = {},
-            onGoToMain = {},
         )
     }
 }

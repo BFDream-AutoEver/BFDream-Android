@@ -93,7 +93,9 @@ class BTViewModel(private val context: Context) : ViewModel() {
         Log.d(TAG, "상태 초기화")
         _connectionState.update { BleConnectionState.Idle }
         _isSending.update { false }
-        // 필요하다면 _selectedBusId.value = null 추가
+
+        // [수정] MainScreen의 요청에 따라, 상태 초기화 시 버스 선택도 해제합니다.
+        _selectedBusId.value = null
     }
 
 
@@ -158,14 +160,12 @@ class BTViewModel(private val context: Context) : ViewModel() {
         handler.postDelayed({
             if (isScanning) {
                 stopScan()
-                // --- 수정: 필터 없으므로 타임아웃 시 '찾지 못함' 대신 스캔 종료만 로깅 ---
                 Log.i(TAG, "스캔 타임아웃 (10초)")
-                // 필터가 없으면 특정 기기를 찾았는지 여부를 판단하기 어려우므로,
-                // 타임아웃 시 에러 상태 대신 Idle 상태로 돌리거나,
-                // 혹은 UI에서 "스캔 완료, 기기를 찾을 수 없습니다" 등으로 표시하도록 유도할 수 있습니다.
-                // 여기서는 일단 Idle 상태로 돌립니다.
+
                 if (targetDevice == null) { // 여전히 연결할 기기를 못 찾았다면
-                    _connectionState.update { BleConnectionState.Idle } // Idle로 변경 (Error 대신)
+                    // [수정] 스캔 타임아웃(기기 못 찾음)은 '실패'이므로 Error 상태로 처리합니다.
+                    Log.w(TAG, "스캔 타임아웃, 기기를 찾을 수 없음")
+                    _connectionState.update { BleConnectionState.Error("주변에서 버스를 찾을 수 없습니다. (시간 초과)") }
                     _isSending.update { false }
                 }
             }
@@ -240,7 +240,7 @@ class BTViewModel(private val context: Context) : ViewModel() {
             if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
                 gatt.disconnect()
                 gatt.close() // 리소스 해제
-                Log.i(TAG, "GATT 연결 해제 및 리소스 정리 완료")
+                Log.i(TAG, "GTATT 연결 해제 및 리소스 정리 완료")
             } else {
                 Log.w(TAG, "GATT 연결 해제 위한 BLUETOOTH_CONNECT 권한 없음")
             }
@@ -275,7 +275,8 @@ class BTViewModel(private val context: Context) : ViewModel() {
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     Log.i(TAG, "GATT 서버 연결 해제됨: $deviceAddress")
                     // 에러 상태나 성공 상태가 아니라면 Idle로 돌림 (예: 단순 연결 해제)
-                    if (_connectionState.value !is BleConnectionState.Error && _connectionState.value !is BleConnectionState.Success) {
+                    val currentState = _connectionState.value
+                    if (currentState !is BleConnectionState.Error && currentState !is BleConnectionState.Success) {
                         _connectionState.update { BleConnectionState.Idle }
                     }
                     // disconnectGatt()은 여기서 호출하지 않음 (disconnect 요청 시 또는 에러/성공 시 호출)

@@ -42,8 +42,8 @@ fun InfoScreen(
     onNavigateBack: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
-    val inquiryUrl = "https://example.com/inquiry" // TODO: 실제 앱 문의 URL로 변경
-    val policyUrl = "https://important-hisser-903.notion.site/10-22-ver-28d65f12c444805cbd1bc99a473df74a?source=copy_link" // TODO: 실제 정책 URL로 변경
+    val inquiryUrl = "https://forms.gle/rnSD44sUEuy1nLaH6"
+    val policyUrl = "https://important-hisser-903.notion.site/10-22-ver-28d65f12c444805cbd1bc99a473df74a?source=copy_link"
 
     Scaffold(
         topBar = {
@@ -85,7 +85,7 @@ fun InfoScreen(
             Image(
                 painter = painterResource(id = R.drawable.info_logo),
                 contentDescription = "앱 로고",
-                modifier = Modifier.size(120.dp)
+                modifier = Modifier.size(180.dp)
             )
 
             Spacer(modifier = Modifier.height(48.dp))
@@ -96,11 +96,13 @@ fun InfoScreen(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.padding(top = 26.dp, bottom = 26.dp, start = 8.dp, end = 8.dp)
+                ) {
                     // --- 버전 ---
-                    InfoRow(text = "버전", value = "v 1.0.0")
+                    InfoRow(text = "버전", value = "v 1.0")
 
-                    Divider(color = Color.LightGray.copy(alpha = 0.5f))
+                    Divider(color = Color.LightGray.copy(alpha = 0.4f))
 
                     // --- 앱 문의 ---
                     ClickableInfoRow(
@@ -108,7 +110,7 @@ fun InfoScreen(
                         onClick = { uriHandler.openUri(inquiryUrl) }
                     )
 
-                    Divider(color = Color.LightGray.copy(alpha = 0.5f))
+                    Divider(color = Color.LightGray.copy(alpha = 0.4f))
 
                     // --- 개인정보 처리 방침 및 이용약관 ---
                     ClickableInfoRow(
@@ -134,7 +136,7 @@ fun InfoRow(text: String, value: String) {
             text = text,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = Color(0xFF4E71FF)
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
@@ -159,14 +161,14 @@ fun ClickableInfoRow(text: String, onClick: () -> Unit) {
             text = text,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = Color(0xFF4E71FF)
         )
         Spacer(modifier = Modifier.weight(1f))
         Icon(
             imageVector = Icons.Default.KeyboardArrowRight,
             contentDescription = "이동",
             tint = Color.Gray.copy(alpha = 0.7f),
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier.size(26.dp)
         )
     }
 }
