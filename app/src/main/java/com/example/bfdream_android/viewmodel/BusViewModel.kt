@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -59,18 +60,32 @@ class BusViewModel(
         }
     }
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     /**
      * 공개 함수: 새로고침 또는 초기 로드
      */
     fun loadBusDataFromCurrentLocation() {
         Log.d(TAG, "loadBusDataFromCurrentLocation: 시작")
-        _busApiState.value = BusApiState.Loading
+        // [삭제] _busApiState.value = BusApiState.Loading (이것이 깜빡임의 주 원인)
 
         viewModelScope.launch {
-            // 1. 위치 권한 확인
+            // [수정] 1. '새로고침'인지 '초기 로딩'인지 먼저 판별합니다.
+            // (MainScreen의 '주변' 관련 에러 UI도 Success로 바뀌므로, isRefreshing이 true가 됩니다.)
+            val isRefresh = _busApiState.value is BusApiState.Success
+
+            if (isRefresh) {
+                _isRefreshing.value = true // 새로고침 아이콘만 돌립니다.
+            } else {
+                _busApiState.value = BusApiState.Loading // 전체 로딩 스피너를 표시합니다.
+            }
+
+            // [수정] 2. 권한/위치 확인은 그 다음에 수행합니다.
             if (!hasLocationPermission()) {
                 Log.w(TAG, "위치 권한 없음")
                 _busApiState.value = BusApiState.Error("위치 권한이 없습니다. 앱 설정에서 권한을 허용해주세요.")
+                if (isRefresh) _isRefreshing.value = false // [추가] 새로고침 중단
                 return@launch
             }
 
@@ -79,12 +94,16 @@ class BusViewModel(
             if (location == null) {
                 Log.w(TAG, "위치 정보 가져오기 실패 (null)")
                 _busApiState.value = BusApiState.Error("현재 위치를 가져오는데 실패했습니다.")
+                if (isRefresh) _isRefreshing.value = false // [추가] 새로고침 중단
                 return@launch
             }
             Log.d(TAG, "현재 위치(WGS84): lat=${location.latitude}, lon=${location.longitude}")
 
-            // 3. [수정] WGS84 -> TM 좌표 변환 로직 *제거*
+            // [삭제] isRefresh 관련 중복 로직 삭제
+            // val isRefresh = ...
+            // if (isRefresh) ...
 
+            // 3. [수정] WGS84 -> TM 좌표 변환 로직 *제거*
             try {
                 // 4. [수정] API 1 호출: tmX에 경도(longitude), tmY에 위도(latitude) 전달
                 Log.d(TAG, "API 호출 (WGS84): tmX(lon)=${location.longitude}, tmY(lat)=${location.latitude}")
@@ -98,14 +117,15 @@ class BusViewModel(
                     val errorMsg = stationsResponse.msgHeader?.headerMsg ?: "알 수 없는 에러"
                     Log.w(TAG, "API 1 (getStationByPos) 에러: $errorMsg")
                     _busApiState.value = BusApiState.Error(errorMsg)
-                    return@launch
+                    return@launch // finally가 실행됩니다.
                 }
 
                 val nearbyStations = stationsResponse.msgBody?.itemList ?: emptyList()
                 if (nearbyStations.isEmpty()) {
                     Log.w(TAG, "주변 정류장 없음")
-                    _busApiState.value = BusApiState.Error("주변 500m 이내에 버스 정류장이 없습니다.")
-                    return@launch
+                    // [수정] '에러'가 아닌 '성공(빈 리스트)'으로 처리합니다.
+                    _busApiState.value = BusApiState.Success(emptyList())
+                    return@launch // finally가 실행됩니다.
                 }
                 Log.d(TAG, "주변 정류장 ${nearbyStations.size}개 발견")
                 Log.d(TAG, nearbyStations.toString()) // [디버깅]
@@ -171,7 +191,8 @@ class BusViewModel(
 
                 if (busStops.isEmpty()) {
                     Log.w(TAG, "주변에 관심 버스가 있는 정류장이 없음")
-                    _busApiState.value = BusApiState.Error("주변 정류장에 도착 예정인 버스가 없습니다.")
+                    // [수정] '에러'가 아닌 '성공(빈 리스트)'으로 처리합니다.
+                    _busApiState.value = BusApiState.Success(emptyList())
                 } else {
                     // [수정] 3. 필터링된 정류장 목록(busStops)은 이미 거리순으로 정렬되어 있음
                     // 이 중에서 가장 첫 번째(가장 가까운) 정류장만 선택
@@ -185,6 +206,9 @@ class BusViewModel(
             } catch (e: Exception) {
                 Log.e(TAG, "API 처리 중 예외 발생", e)
                 _busApiState.value = BusApiState.Error("버스 정보를 가져오는 중 오류가 발생했습니다: ${e.message}")
+            } finally {
+                // [수정] isRefresh 여부와 관계없이, 로직이 끝나면 항상 '새로고침' 상태를 끕니다.
+                _isRefreshing.value = false
             }
         }
     }

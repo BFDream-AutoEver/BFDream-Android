@@ -1,6 +1,12 @@
 package com.example.bfdream_android.components
 
 import android.content.Context
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,7 +30,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -56,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -107,6 +113,7 @@ fun MainScreen(
 
     // --- BusViewModel 상태 ---
     val busApiState by busViewModel.busApiState.collectAsState()
+    val isRefreshing by busViewModel.isRefreshing.collectAsState()
 
     // --- UI 상태 ---
     val snackbarHostState = remember { SnackbarHostState() }
@@ -322,58 +329,58 @@ fun MainScreen(
                         color = Color.White
                     )
                 }
+                // [수정] Success 상태에서 isEmpty 확인
                 is BusApiState.Success -> {
-                    // [수정] LazyColumn으로 정류장 목록 표시
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp) // 하단 여백
-                    ) {
-                        items(state.busStops, key = { it.arsId }) { stop -> // [수정] busStops
-                            BusStopCard(
-                                stop = stop,
-                                selectedBusId = selectedBusId,
-                                onBusSelected = { busId ->
-                                    // [수정] 버스 선택 시 BTViewModel의 selectBus 호출
-                                    btViewModel.selectBus(busId)
-                                },
-                                onRefresh = {
-                                    // [수정] 함수 이름 변경
-                                    busViewModel.loadBusDataFromCurrentLocation()
-                                }
-                            )
+                    if (state.busStops.isEmpty()) {
+                        // 1. 결과가 비었을 때 (주변 버스 없음)
+                        EmptyBusStopCard(
+                            message = "주변에 관심 버스가 없습니다.", // 고정 메시지
+                            isRefreshing = isRefreshing,
+                            onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                        )
+                    } else {
+                        // 2. 결과가 있을 때
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp) // 하단 여백
+                        ) {
+                            items(state.busStops, key = { it.arsId }) { stop -> // [수정] busStops
+                                BusStopCard(
+                                    stop = stop,
+                                    selectedBusId = selectedBusId,
+                                    isRefreshing = isRefreshing,
+                                    onBusSelected = { busId ->
+                                        // [수정] 버스 선택 시 BTViewModel의 selectBus 호출
+                                        btViewModel.selectBus(busId)
+                                    },
+                                    onRefresh = {
+                                        // [수정] 함수 이름 변경
+                                        busViewModel.loadBusDataFromCurrentLocation()
+                                    }
+                                )
+                            }
                         }
                     }
                 }
                 is BusApiState.Error -> {
-                    // [수정] 에러 메시지 내용에 따라 UI를 분기합니다.
-                    if (state.message.contains("주변")) {
-                        // "주변 정류장 없음" 또는 "주변 관심 버스 없음" 등
-                        // 사용자가 요청한 대로 Card 스타일에 메시지를 표시합니다.
-                        EmptyBusStopCard(
-                            message = state.message,
-                            onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                    // [수정] '진짜' 에러 (권한, 네트워크)만 처리
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(top = 32.dp)
+                    ) {
+                        Text(
+                            text = "버스 정보를 불러오는 데 실패했습니다.\n(${state.message})",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center
                         )
-                    } else {
-                        // "위치 권한" 또는 "네트워크 실패" 등
-                        // 기존의 일반 에러 UI를 표시합니다.
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(top = 32.dp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = { busViewModel.loadBusDataFromCurrentLocation() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
                         ) {
-                            Text(
-                                text = "버스 정보를 불러오는 데 실패했습니다.\n(${state.message})",
-                                color = Color.White,
-                                style = MaterialTheme.typography.bodyLarge,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(
-                                onClick = { busViewModel.loadBusDataFromCurrentLocation() },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
-                            ) {
-                                Text("새로고침")
-                            }
+                            Text("새로고침")
                         }
                     }
                 }
@@ -401,6 +408,7 @@ fun MainScreen(
 fun BusStopCard(
     stop: BusStop, // [수정] 목업 클래스 대신 실제 data 클래스 사용
     selectedBusId: String?,
+    isRefreshing: Boolean,
     onBusSelected: (String?) -> Unit,
     onRefresh: () -> Unit
 ) {
@@ -433,12 +441,35 @@ fun BusStopCard(
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
-                IconButton(onClick = onRefresh) {
-                    Icon(
-                        imageVector = Icons.Filled.Refresh,
-                        contentDescription = "새로고침",
-                        tint = Color.Gray
-                    )
+                IconButton(onClick = onRefresh, enabled = !isRefreshing) { // 새로고침 중 비활성화
+                    // [수정] isRefreshing 값에 따라 분기
+                    if (isRefreshing) {
+                        // 1. 무한 회전 애니메이션 정의
+                        val transition = rememberInfiniteTransition(label = "refresh_transition")
+                        val rotation by transition.animateFloat(
+                            initialValue = 0f,
+                            targetValue = 360f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(1000, easing = LinearEasing),
+                                repeatMode = RepeatMode.Restart
+                            ),
+                            label = "refresh_rotation"
+                        )
+                        // 2. 회전 Modifier 적용
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = "새로고침 중",
+                            tint = Color.Gray,
+                            modifier = Modifier.rotate(rotation) // 회전 적용
+                        )
+                    } else {
+                        // 3. 기본 아이콘
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = "새로고침",
+                            tint = Color.Gray
+                        )
+                    }
                 }
             }
 
@@ -446,8 +477,10 @@ fun BusStopCard(
             HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(8.dp))
 
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                stop.buses.forEach { bus ->
+            // [수정] A. verticalArrangement 삭제
+            Column {
+                // [수정] B. forEachIndexed로 변경하여 리스트 아이템 사이에 구분선 추가
+                stop.buses.forEachIndexed { index, bus ->
                     BusRow(
                         bus = bus,
                         isSelected = bus.id == selectedBusId,
@@ -456,6 +489,13 @@ fun BusStopCard(
                             onBusSelected(newSelection)
                         }
                     )
+
+                    // [수정] C. 마지막 항목이 아닐 경우에만 구분선 추가
+                    if (index < stop.buses.lastIndex) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
 
@@ -479,7 +519,7 @@ fun BusRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Default.Home,
+            painter = painterResource(R.drawable.bus),
             contentDescription = "버스",
             tint = bus.color,
             modifier = Modifier.size(32.dp)
@@ -524,7 +564,11 @@ fun BusRow(
 }
 
 @Composable
-fun EmptyBusStopCard(message: String, onRefresh: () -> Unit) {
+fun EmptyBusStopCard(
+    message: String,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -547,12 +591,35 @@ fun EmptyBusStopCard(message: String, onRefresh: () -> Unit) {
                     fontSize = 16.sp,
                     color = Color.Black
                 )
-                IconButton(onClick = onRefresh) {
-                    Icon(
-                        imageVector = Icons.Filled.Refresh,
-                        contentDescription = "새로고침",
-                        tint = Color.Gray
-                    )
+                IconButton(onClick = onRefresh, enabled = !isRefreshing) { // 새로고침 중 비활성화
+                    // [수정] isRefreshing 값에 따라 분기
+                    if (isRefreshing) {
+                        // 1. 무한 회전 애니메이션 정의
+                        val transition = rememberInfiniteTransition(label = "refresh_transition")
+                        val rotation by transition.animateFloat(
+                            initialValue = 0f,
+                            targetValue = 360f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(1000, easing = LinearEasing),
+                                repeatMode = RepeatMode.Restart
+                            ),
+                            label = "refresh_rotation"
+                        )
+                        // 2. 회전 Modifier 적용
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = "새로고침 중",
+                            tint = Color.Gray,
+                            modifier = Modifier.rotate(rotation) // 회전 적용
+                        )
+                    } else {
+                        // 3. 기본 아이콘
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = "새로고침",
+                            tint = Color.Gray
+                        )
+                    }
                 }
             }
         }
@@ -588,6 +655,7 @@ fun MainPreview() {
                     BusStopCard(
                         stop = stop,
                         selectedBusId = "100100199", // 2222번이 선택된 상태로
+                        isRefreshing = false,
                         onBusSelected = {},
                         onRefresh = {}
                     )
