@@ -1,5 +1,6 @@
 package com.example.bfdream_android.network
 
+import com.example.bfdream_android.BuildConfig
 import com.example.bfdream_android.data.ArrivalInfoResponse
 import com.example.bfdream_android.data.StationByPosResponse
 import okhttp3.OkHttpClient
@@ -17,8 +18,7 @@ interface BusApiService {
         private const val BASE_URL = "http://ws.bus.go.kr/api/rest/"
 
         // TODO: 여기에 실제 API 키를 입력하세요
-//        private const val API_KEY = "YOUR_API_KEY"
-        private const val API_KEY = "29b4ab63713865b3f2cdf31264b27efa9dfac8019d464980fdccef522c46e39e"
+        private const val API_KEY = BuildConfig.API_KEY
 
         private val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
