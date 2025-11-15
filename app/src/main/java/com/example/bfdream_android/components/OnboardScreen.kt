@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
@@ -55,28 +56,28 @@ fun OnboardScreen(
             "안녕하세요 :)\n맘편한 이동입니다",
             "맘편한 이동",
             0xFF5409DA,
-            "임산부 분들의 편안하고 안전한 버스 배려석 탑승을\n도와드릴게요!"
+            "임산부 분들의 편안하고 안전한 버스 배려석 탑승을 도와드릴게요!"
         ),
         OnboardPageData(
             R.drawable.onboard2,
             "부담감 제로",
             "제로",
             0xFF3F72AF,
-            "탑승하려는 버스의 임산부 배려석에 알림을 줄 수 있어요!\n이로 인해 탑승객들의 자연스러운 배려석 양보가 \n가능합니다."
+            "탑승하려는 버스의 임산부 배려석에 알림을 줄 수 있어요! 이로 인해 탑승객들의 자연스러운 배려석 양보가 가능합니다."
         ),
         OnboardPageData(
             R.drawable.onboard3,
             "쉽고 간편하게",
             "간편하게",
             0xFF4E71FF,
-            "GPS & 실시간 버스 데이터 기반으로\n주변 정류장의 탑승할 버스 도착 정보를 확인하고,\n알림만 울리면 끝!"
+            "GPS와 실시간 버스 데이터 기반으로 주변 정류장의 탑승할 버스 도착 정보를 확인하고, 알림만 울리면 끝!"
         ),
         OnboardPageData(
             R.drawable.onboard4,
             "임산부들만 이용가능",
             "임산부",
             0xFFFFC0CB,
-            "임산부 신고 후, 해당 서비스를 이용하실 수 있습니다.\n임산부 신고는 e보건소 혹은 직접 방문, 아이마중 어플\n등을 통해 가능합니다."
+            "임산부 신고 후, 해당 서비스를 이용하실 수 있습니다. 임산부 신고는 e보건소 혹은 직접 방문, 아이마중 어플 등을 통해 가능합니다."
         ),
         OnboardPageData(
             R.drawable.info_logo,
@@ -182,7 +183,7 @@ fun OnboardScreen(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text(
-                    text = "시작하기",
+                    text = "다음",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
@@ -208,7 +209,7 @@ data class OnboardPageData(
 @Composable
 fun OnboardPage(data: OnboardPageData) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().padding(50.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -309,7 +310,7 @@ fun OnboardPage(data: OnboardPageData) {
             Image(
                 painter = painterResource(id = data.image),
                 contentDescription = data.title,
-                modifier = Modifier.size(350.dp)
+                modifier = Modifier.size(330.dp)
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -328,7 +329,7 @@ fun OnboardPage(data: OnboardPageData) {
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 color = Color.White,
-                fontSize = 16.sp
+                fontSize = 14.sp
             )
         }
     }

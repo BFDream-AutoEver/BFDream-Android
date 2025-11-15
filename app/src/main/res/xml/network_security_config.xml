@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  "CLEARTEXT communication not permitted" 오류를 해결하기 위한
+  네트워크 보안 설정 파일입니다.
+  이 파일은 ws.bus.go.kr 도메인에 한해서만 암호화되지 않은(http://)
+  통신을 예외적으로 허용합니다.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!--
+          서울시 버스 정보 API (ws.bus.go.kr) 도메인에 대해
+          clearttextTraffic(http)을 허용합니다.
+        -->
+        <domain includeSubdomains="true">ws.bus.go.kr</domain>
+    </domain-config>
+</network-security-config>
