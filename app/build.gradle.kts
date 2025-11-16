@@ -12,6 +12,13 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 
+configurations {
+    all {
+        exclude(group = "org.xmlpull.v1", module = "xmlpull")
+        exclude(group = "xpp3", module = "xpp3")
+    }
+}
+
 android {
     namespace = "com.example.bfdream_android"
     compileSdk = 36
@@ -20,7 +27,7 @@ android {
         applicationId = "com.bfdream.comfortablemove"
         minSdk = 34
         targetSdk = 36
-        versionCode = 5
+        versionCode = 10
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -34,7 +41,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
