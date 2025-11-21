@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -132,7 +133,10 @@ fun OnboardScreen(
     )
 
     Column(
-        modifier = Modifier.fillMaxSize().background(Color(0xFFA1ACF9)),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFA1ACF9))
+            .systemBarsPadding(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

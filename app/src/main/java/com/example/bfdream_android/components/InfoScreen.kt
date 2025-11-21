@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +45,9 @@ fun InfoScreen(
     val uriHandler = LocalUriHandler.current
     val inquiryUrl = "https://forms.gle/rnSD44sUEuy1nLaH6"
     val policyUrl = "https://important-hisser-903.notion.site/10-22-ver-28d65f12c444805cbd1bc99a473df74a?source=copy_link"
+
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
 
     Scaffold(
         topBar = {
@@ -85,7 +89,7 @@ fun InfoScreen(
             Image(
                 painter = painterResource(id = R.drawable.info_logo),
                 contentDescription = "앱 로고",
-                modifier = Modifier.size(180.dp)
+                modifier = Modifier.size(screenWidth * 0.55f)
             )
 
             Spacer(modifier = Modifier.height(48.dp))

@@ -1,6 +1,5 @@
 package com.example.bfdream_android.components
 
-import android.content.Context
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -11,10 +10,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -63,6 +62,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration // [추가됨] 화면 크기 가져오기용
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -70,7 +70,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bfdream_android.R
 import com.example.bfdream_android.data.BusDataRepository
@@ -91,50 +90,50 @@ import kotlinx.coroutines.launch
 fun MainScreen(
     onNavigateToHelp: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    // [수정] 2개의 ViewModel 주입
     btViewModel: BTViewModel = viewModel(
         factory = BTViewModelFactory(LocalContext.current.applicationContext)
     ),
 ) {
-    // [수정] BusViewModel을 composable 본문 안에서 초기화합니다.
     val appContext = LocalContext.current.applicationContext
     val busViewModel: BusViewModel = viewModel(
         factory = BusViewModelFactory(
             appContext,
-            BusApiService.instance, // 1. busApi 전달
-            remember(appContext) { BusDataRepository(appContext) } // 2. busRepo 생성 및 전달
+            BusApiService.instance,
+            remember(appContext) { BusDataRepository(appContext) }
         )
     )
 
-    // --- BTViewModel 상태 ---
+    // --- State 수집 ---
     val selectedBusId by btViewModel.selectedBusId.collectAsState()
     val btConnectionState by btViewModel.connectionState.collectAsState()
     val isSending by btViewModel.isSending.collectAsState()
-
-    // --- BusViewModel 상태 ---
     val busApiState by busViewModel.busApiState.collectAsState()
     val isRefreshing by busViewModel.isRefreshing.collectAsState()
 
-    // --- UI 상태 ---
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showConfirmDialog by remember { mutableStateOf(false) }
 
-    // --- [수정] 선택된 버스 정보를 API 결과(busApiState)에서 찾기 ---
+    // --- 화면 크기 가져오기 및 버튼 크기 계산 [추가됨] ---
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    // 화면 너비의 65%를 버튼 크기로 설정 (너무 작거나 크지 않게 조절 가능)
+    val buttonSize = screenWidth * 0.65f
+
+    // --- 선택된 버스 정보 찾기 ---
     val selectedBusInfo: BusInfo? by remember(selectedBusId, busApiState) {
         derivedStateOf {
             if (selectedBusId == null || busApiState !is BusApiState.Success) {
                 null
             } else {
-                // 모든 정류장의 모든 버스를 뒤져서 ID가 일치하는 버스 찾기
-                (busApiState as BusApiState.Success).busStops // [수정] busStops
+                (busApiState as BusApiState.Success).busStops
                     .flatMap { it.buses }
                     .find { it.id == selectedBusId }
             }
         }
     }
 
-    // --- Bluetooth 상태 처리 Effect (기존과 동일) ---
+    // --- Bluetooth 상태 Effect ---
     LaunchedEffect(btConnectionState) {
         val currentState = btConnectionState
         val message = when (currentState) {
@@ -157,41 +156,36 @@ fun MainScreen(
         }
     }
 
-    // --- 확인 다이얼로그 (기존과 동일) ---
+    // --- Confirm Dialog ---
     if (showConfirmDialog && selectedBusInfo != null) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
             title = { Text(text = "알림 전송 확인") },
             text = { Text(text = "${selectedBusInfo!!.number}번 버스에 배려석 알림을 전송하시겠습니까?") },
             confirmButton = {
-                Button(
-                    onClick = {
-                        btViewModel.sendCourtesySeatNotification()
-                        showConfirmDialog = false
-                    }
-                ) { Text("확인") }
+                Button(onClick = {
+                    btViewModel.sendCourtesySeatNotification()
+                    showConfirmDialog = false
+                }) { Text("확인") }
             },
             dismissButton = {
-                Button(
-                    onClick = { showConfirmDialog = false }
-                ) { Text("취소") }
+                Button(onClick = { showConfirmDialog = false }) { Text("취소") }
             }
         )
     }
 
-    // --- [수정] BT 실패 다이얼로그 (기존과 동일, 변수명만 변경) ---
+    // --- BT Error Dialog ---
     val currentBtState = btConnectionState
     if (currentBtState is BTViewModel.BleConnectionState.Error) {
         AlertDialog(
             onDismissRequest = { btViewModel.resetState() },
             title = { Text(text = "전송 실패") },
-            text = { Text(text = "버스 배려석 알림 전송에 실패하였습니다. (${currentBtState.message})") }, // [수정] 에러 메시지 포함
+            text = { Text(text = "버스 배려석 알림 전송에 실패하였습니다. (${currentBtState.message})") },
             confirmButton = {
                 Button(onClick = { btViewModel.resetState() }) { Text("확인") }
             }
         )
     }
-
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -205,208 +199,171 @@ fun MainScreen(
                             modifier = Modifier.size(26.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "맘편한 이동",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                        Text(text = "맘편한 이동", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 },
                 actions = {
                     IconButton(onClick = onNavigateToHelp) {
-                        Image(
-                            painter = painterResource(R.drawable.main_help),
-                            contentDescription = "도움말",
-                            modifier = Modifier.size(26.dp)
-                        )
+                        Image(painter = painterResource(R.drawable.main_help), contentDescription = "도움말", modifier = Modifier.size(26.dp))
                     }
                     IconButton(onClick = onNavigateToProfile) {
-                        Image(
-                            painter = painterResource(R.drawable.main_info),
-                            contentDescription = "앱 정보",
-                            modifier = Modifier.size(26.dp)
-                        )
+                        Image(painter = painterResource(R.drawable.main_info), contentDescription = "앱 정보", modifier = Modifier.size(26.dp))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFA1ACF9)
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFA1ACF9))
             )
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFA1ACF9))
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp), // [수정] 상하 패딩은 LazyColumn이 처리하도록 수평만
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            val interactionSource = remember { MutableInteractionSource() }
-            val isPressed by interactionSource.collectIsPressedAsState()
-
-            Box(
-                modifier = Modifier.size(260.dp),
-                contentAlignment = Alignment.Center
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 32.dp)
             ) {
-                // 1. 그림자
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .offset(y = 4.dp)
-                        .background(
-                            color = Color.Black.copy(alpha = 0.2f),
-                            shape = CircleShape
+                // --- 1. 상단 헤더 영역 ---
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    val interactionSource = remember { MutableInteractionSource() }
+
+                    // [수정] 동적 크기 적용
+                    Box(
+                        modifier = Modifier.size(buttonSize), // buttonSize 사용
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // 그림자
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .offset(y = 4.dp)
+                                .background(Color.Black.copy(alpha = 0.2f), CircleShape)
+                                .blur(radius = 10.dp)
                         )
-                        .blur(radius = 10.dp)
-                )
-
-                // 2. 버튼
-                Button(
-                    onClick = {
-                        if (selectedBusId != null && !isSending) {
-                            showConfirmDialog = true
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                    shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4E71FF),
-                        disabledContainerColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp
-                    ),
-                    interactionSource = interactionSource,
-                    // [수정] BT 에러 시에도 비활성화
-                    enabled = selectedBusId != null && !isSending && (currentBtState !is BTViewModel.BleConnectionState.Error)
-                ) {
-                    if (isSending) {
-                        CircularProgressIndicator(modifier = Modifier.size(100.dp))
-                    } else {
-                        // [수정] selectedBusInfo (실제 데이터) 기반으로 이미지 변경
-                        val imageResource = if (selectedBusInfo != null) {
-                            R.drawable.main_button_selected
-                        } else {
-                            R.drawable.main_button
-                        }
-                        val contentDesc = if (selectedBusInfo != null) {
-                            "알림 발송 버튼 (활성화)"
-                        } else {
-                            "알림 발송 버튼 (비활성화 - 버스 선택 필요)"
-                        }
-
-                        Image(
-                            painter = painterResource(id = imageResource),
-                            contentDescription = contentDesc,
-                            modifier = Modifier.size(260.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(34.dp))
-
-            // [수정] selectedBusInfo 기반으로 텍스트 변경
-            Text(
-                text = if (selectedBusInfo == null) "버스 선택 후, 알림을 울려주세요!" else "선택 완료! 알림을 울려주세요",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-
-            Spacer(modifier = Modifier.height(56.dp))
-
-            // --- [수정] 버스 목록 API 상태에 따라 분기 처리 ---
-            when (val state = busApiState) {
-                is BusApiState.Loading -> {
-                    // 로딩 중
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(top = 32.dp),
-                        color = Color.White
-                    )
-                }
-                // [수정] Success 상태에서 isEmpty 확인
-                is BusApiState.Success -> {
-                    if (state.busStops.isEmpty()) {
-                        // 1. 결과가 비었을 때 (주변 버스 없음)
-                        EmptyBusStopCard(
-                            message = "주변에 관심 버스가 없습니다.", // 고정 메시지
-                            isRefreshing = isRefreshing,
-                            onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
-                        )
-                    } else {
-                        // 2. 결과가 있을 때
-                        LazyColumn(
+                        // 버튼
+                        Button(
+                            onClick = {
+                                if (selectedBusId != null && !isSending) {
+                                    showConfirmDialog = true
+                                }
+                            },
                             modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp) // 하단 여백
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4E71FF),
+                                disabledContainerColor = Color.White
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                            interactionSource = interactionSource,
+                            enabled = selectedBusId != null && !isSending && (currentBtState !is BTViewModel.BleConnectionState.Error)
                         ) {
-                            items(state.busStops, key = { it.arsId }) { stop -> // [수정] busStops
-                                BusStopCard(
-                                    stop = stop,
-                                    selectedBusId = selectedBusId,
-                                    isRefreshing = isRefreshing,
-                                    onBusSelected = { busId ->
-                                        // [수정] 버스 선택 시 BTViewModel의 selectBus 호출
-                                        btViewModel.selectBus(busId)
-                                    },
-                                    onRefresh = {
-                                        // [수정] 함수 이름 변경
-                                        busViewModel.loadBusDataFromCurrentLocation()
-                                    }
+                            if (isSending) {
+                                CircularProgressIndicator(modifier = Modifier.size(100.dp))
+                            } else {
+                                val imageResource = if (selectedBusInfo != null) R.drawable.main_button_selected else R.drawable.main_button
+                                val contentDesc = if (selectedBusInfo != null) "알림 발송 버튼 (활성화)" else "알림 발송 버튼 (비활성화)"
+
+                                // [수정] 이미지가 부모 박스(버튼) 크기를 가득 채우도록 변경
+                                Image(
+                                    painter = painterResource(id = imageResource),
+                                    contentDescription = contentDesc,
+                                    modifier = Modifier.fillMaxSize() // fillMaxSize 사용
                                 )
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(34.dp))
+
+                    Text(
+                        text = if (selectedBusInfo == null) "버스 선택 후, 알림을 울려주세요!" else "선택 완료! 알림을 울려주세요",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(40.dp))
                 }
-                is BusApiState.Error -> {
-                    // [수정] '진짜' 에러 (권한, 네트워크)만 처리
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(top = 32.dp)
-                    ) {
-                        Text(
-                            text = "버스 정보를 불러오는 데 실패했습니다.\n(${state.message})",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = { busViewModel.loadBusDataFromCurrentLocation() },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
-                        ) {
-                            Text("새로고침")
+
+                // --- 2. 버스 목록 데이터 영역 ---
+                when (val state = busApiState) {
+                    is BusApiState.Loading -> {
+                        item {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.padding(top = 32.dp)
+                            )
                         }
                     }
-                }
-                is BusApiState.Idle -> {
-                    // 초기 상태 (보통 Loading으로 바로 전환됨)
-                    Text(
-                        text = "버스 정보를 불러오는 중입니다...",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(top = 32.dp)
-                    )
+                    is BusApiState.Success -> {
+                        if (state.busStops.isEmpty()) {
+                            item {
+                                EmptyBusStopCard(
+                                    message = "주변에 관심 버스가 없습니다.",
+                                    isRefreshing = isRefreshing,
+                                    onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                                )
+                            }
+                        } else {
+                            items(state.busStops, key = { it.arsId }) { stop ->
+                                BusStopCard(
+                                    stop = stop,
+                                    selectedBusId = selectedBusId,
+                                    isRefreshing = isRefreshing,
+                                    onBusSelected = { btViewModel.selectBus(it) },
+                                    onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                                )
+                            }
+                        }
+                    }
+                    is BusApiState.Error -> {
+                        item {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(top = 32.dp)
+                            ) {
+                                Text(
+                                    text = "버스 정보를 불러오는 데 실패했습니다.\n(${state.message})",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = { busViewModel.loadBusDataFromCurrentLocation() },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
+                                ) {
+                                    Text("새로고침")
+                                }
+                            }
+                        }
+                    }
+                    is BusApiState.Idle -> {
+                        item {
+                            Text(
+                                text = "버스 정보를 불러오는 중입니다...",
+                                color = Color.White,
+                                modifier = Modifier.padding(top = 32.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-
-// --- 목업 데이터 삭제 ---
-// data class BusInfo(...), data class BusStop(...), val mockBusStops ...
-// [수정] 이 부분의 목업 데이터는 BusData.kt로 이동했으므로 삭제합니다.
-
-
+// --- 하위 Composable 함수들 (기존과 동일) ---
 @Composable
 fun BusStopCard(
-    stop: BusStop, // [수정] 목업 클래스 대신 실제 data 클래스 사용
+    stop: BusStop,
     selectedBusId: String?,
     isRefreshing: Boolean,
     onBusSelected: (String?) -> Unit,
@@ -423,7 +380,7 @@ fun BusStopCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(modifier = Modifier.weight(1f)) { // [수정] 텍스트가 길어질 경우 대비
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stop.name,
                         style = MaterialTheme.typography.titleLarge,
@@ -432,19 +389,16 @@ fun BusStopCard(
                         color = Color.Black
                     )
                     Text(
-//                        text = stop.direction,
                         text = "사용자와 최근접의 버스정류장 정보가 표시됩니다.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
-                        maxLines = 1, // [수정] 방향 텍스트 한 줄 처리
+                        maxLines = 1,
                         fontSize = 12.sp,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
-                IconButton(onClick = onRefresh, enabled = !isRefreshing) { // 새로고침 중 비활성화
-                    // [수정] isRefreshing 값에 따라 분기
+                IconButton(onClick = onRefresh, enabled = !isRefreshing) {
                     if (isRefreshing) {
-                        // 1. 무한 회전 애니메이션 정의
                         val transition = rememberInfiniteTransition(label = "refresh_transition")
                         val rotation by transition.animateFloat(
                             initialValue = 0f,
@@ -455,15 +409,13 @@ fun BusStopCard(
                             ),
                             label = "refresh_rotation"
                         )
-                        // 2. 회전 Modifier 적용
                         Icon(
                             imageVector = Icons.Filled.Refresh,
                             contentDescription = "새로고침 중",
                             tint = Color.Gray,
-                            modifier = Modifier.rotate(rotation) // 회전 적용
+                            modifier = Modifier.rotate(rotation)
                         )
                     } else {
-                        // 3. 기본 아이콘
                         Icon(
                             imageVector = Icons.Filled.Refresh,
                             contentDescription = "새로고침",
@@ -477,9 +429,7 @@ fun BusStopCard(
             HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(8.dp))
 
-            // [수정] A. verticalArrangement 삭제
             Column {
-                // [수정] B. forEachIndexed로 변경하여 리스트 아이템 사이에 구분선 추가
                 stop.buses.forEachIndexed { index, bus ->
                     BusRow(
                         bus = bus,
@@ -489,8 +439,6 @@ fun BusStopCard(
                             onBusSelected(newSelection)
                         }
                     )
-
-                    // [수정] C. 마지막 항목이 아닐 경우에만 구분선 추가
                     if (index < stop.buses.lastIndex) {
                         Spacer(modifier = Modifier.height(8.dp))
                         HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
@@ -498,7 +446,6 @@ fun BusStopCard(
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
@@ -506,7 +453,7 @@ fun BusStopCard(
 
 @Composable
 fun BusRow(
-    bus: BusInfo, // [수정] 목업 클래스 대신 실제 data 클래스 사용
+    bus: BusInfo,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
@@ -515,7 +462,6 @@ fun BusRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick),
-//            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -524,9 +470,7 @@ fun BusRow(
             tint = bus.color,
             modifier = Modifier.size(32.dp)
         )
-
         Spacer(modifier = Modifier.width(10.dp))
-
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(3.dp)
@@ -551,9 +495,7 @@ fun BusRow(
                 fontSize = 12.sp
             )
         }
-
         Spacer(modifier = Modifier.width(16.dp))
-
         Icon(
             imageVector = Icons.Filled.CheckCircle,
             contentDescription = if (isSelected) "선택됨" else "선택하기",
@@ -591,10 +533,8 @@ fun EmptyBusStopCard(
                     fontSize = 16.sp,
                     color = Color.Black
                 )
-                IconButton(onClick = onRefresh, enabled = !isRefreshing) { // 새로고침 중 비활성화
-                    // [수정] isRefreshing 값에 따라 분기
+                IconButton(onClick = onRefresh, enabled = !isRefreshing) {
                     if (isRefreshing) {
-                        // 1. 무한 회전 애니메이션 정의
                         val transition = rememberInfiniteTransition(label = "refresh_transition")
                         val rotation by transition.animateFloat(
                             initialValue = 0f,
@@ -605,15 +545,13 @@ fun EmptyBusStopCard(
                             ),
                             label = "refresh_rotation"
                         )
-                        // 2. 회전 Modifier 적용
                         Icon(
                             imageVector = Icons.Filled.Refresh,
                             contentDescription = "새로고침 중",
                             tint = Color.Gray,
-                            modifier = Modifier.rotate(rotation) // 회전 적용
+                            modifier = Modifier.rotate(rotation)
                         )
                     } else {
-                        // 3. 기본 아이콘
                         Icon(
                             imageVector = Icons.Filled.Refresh,
                             contentDescription = "새로고침",
@@ -626,12 +564,10 @@ fun EmptyBusStopCard(
     }
 }
 
-// --- Preview (수정) ---
 @Preview(showBackground = true)
 @Composable
 fun MainPreview() {
     BFDreamAndroidTheme {
-        // Mock 데이터로 BusStopCard 프리뷰
         val previewBusStops = listOf(
             BusStop(
                 "05189", "한아름공원", "건대입구역 방면",
@@ -641,37 +577,27 @@ fun MainPreview() {
                 )
             )
         )
-
-        // LazyColumn 대신 Column을 사용한 프리뷰
-        Scaffold { paddingValues -> // [수정] Scaffold로 감싸기
-            Column(
+        Scaffold { paddingValues ->
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFFA1ACF9))
                     .padding(paddingValues)
                     .padding(16.dp)
             ) {
-                previewBusStops.forEach { stop ->
-                    BusStopCard(
-                        stop = stop,
-                        selectedBusId = "100100199", // 2222번이 선택된 상태로
-                        isRefreshing = false,
-                        onBusSelected = {},
-                        onRefresh = {}
-                    )
+                // Preview용 간단한 Column (LazyColumn 대신)
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    previewBusStops.forEach { stop ->
+                        BusStopCard(
+                            stop = stop,
+                            selectedBusId = "100100199",
+                            isRefreshing = false,
+                            onBusSelected = {},
+                            onRefresh = {}
+                        )
+                    }
                 }
             }
         }
-    }
-}
-
-// --- BTViewModelFactory (기존과 동일) ---
-class BTViewModelFactory(private val context: Context) : androidx.lifecycle.ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(BTViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return BTViewModel(context.applicationContext) as T // [수정] ApplicationContext
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
