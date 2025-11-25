@@ -44,10 +44,10 @@ fun InfoScreen(
 ) {
     val uriHandler = LocalUriHandler.current
     val inquiryUrl = "https://forms.gle/rnSD44sUEuy1nLaH6"
-    val policyUrl = "https://important-hisser-903.notion.site/10-22-ver-28d65f12c444805cbd1bc99a473df74a?source=copy_link"
+    val policyUrl = "https://important-hisser-903.notion.site/10-22-ver-29a65f12c44480b6b591e726c5c80f89?pvs=74"
 
     val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
+    val screenHeight = configuration.screenHeightDp.dp
 
     Scaffold(
         topBar = {
@@ -83,13 +83,13 @@ fun InfoScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(screenHeight * 0.01f))
 
             // --- 앱 로고 ---
             Image(
                 painter = painterResource(id = R.drawable.info_logo),
                 contentDescription = "앱 로고",
-                modifier = Modifier.size(screenWidth * 0.55f)
+                modifier = Modifier.size(screenHeight * 0.3f)
             )
 
             Spacer(modifier = Modifier.height(48.dp))

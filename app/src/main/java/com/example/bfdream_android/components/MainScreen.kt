@@ -42,8 +42,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -54,7 +52,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,7 +59,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration // [추가됨] 화면 크기 가져오기용
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,7 +80,6 @@ import com.example.bfdream_android.viewmodel.BTViewModelFactory
 import com.example.bfdream_android.viewmodel.BusApiState
 import com.example.bfdream_android.viewmodel.BusViewModel
 import com.example.bfdream_android.viewmodel.BusViewModelFactory
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,13 +106,15 @@ fun MainScreen(
     val busApiState by busViewModel.busApiState.collectAsState()
     val isRefreshing by busViewModel.isRefreshing.collectAsState()
 
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     var showConfirmDialog by remember { mutableStateOf(false) }
+
+    // [추가] 성공 다이얼로그 표시 여부를 관리하는 상태 변수
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
     // --- 화면 크기 가져오기 및 버튼 크기 계산 [추가됨] ---
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
+    val screenHeight = configuration.screenHeightDp.dp
     // 화면 너비의 65%를 버튼 크기로 설정 (너무 작거나 크지 않게 조절 가능)
     val buttonSize = screenWidth * 0.65f
 
@@ -136,24 +134,31 @@ fun MainScreen(
     // --- Bluetooth 상태 Effect ---
     LaunchedEffect(btConnectionState) {
         val currentState = btConnectionState
-        val message = when (currentState) {
-            is BTViewModel.BleConnectionState.Scanning -> "주변 버스 찾는 중..."
-            is BTViewModel.BleConnectionState.Connecting -> "버스에 연결 중..."
-            is BTViewModel.BleConnectionState.Connected -> "버스 연결됨, 알림 전송 시도..."
-            is BTViewModel.BleConnectionState.Success -> "알림 전송 성공!"
-            is BTViewModel.BleConnectionState.Error -> null
-            is BTViewModel.BleConnectionState.Idle -> null
-        }
 
-        message?.let {
-            scope.launch {
-                snackbarHostState.showSnackbar(it)
-                if (currentState is BTViewModel.BleConnectionState.Success) {
-                    kotlinx.coroutines.delay(2000)
-                    btViewModel.resetState()
+        // 1. 성공 상태 감지 시 다이얼로그 띄우기
+        if (currentState is BTViewModel.BleConnectionState.Success) {
+            showSuccessDialog = true
+        }
+    }
+
+    // --- [추가] 전송 성공 Dialog ---
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                // 다이얼로그 바깥을 터치해서 닫을 때도 상태 초기화
+                showSuccessDialog = false
+                btViewModel.resetState()
+            },
+            title = { Text(text = "알림 전송 성공") },
+            confirmButton = {
+                Button(onClick = {
+                    showSuccessDialog = false
+                    btViewModel.resetState() // 확인 버튼 누르면 초기화
+                }) {
+                    Text("확인")
                 }
             }
-        }
+        )
     }
 
     // --- Confirm Dialog ---
@@ -188,7 +193,6 @@ fun MainScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -280,7 +284,7 @@ fun MainScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(34.dp))
+                    Spacer(modifier = Modifier.height(screenHeight * 0.02f))
 
                     Text(
                         text = if (selectedBusInfo == null) "버스 선택 후, 알림을 울려주세요!" else "선택 완료! 알림을 울려주세요",
@@ -289,7 +293,7 @@ fun MainScreen(
                         color = Color.White
                     )
 
-                    Spacer(modifier = Modifier.height(40.dp))
+                    Spacer(modifier = Modifier.height(screenHeight * 0.02f))
                 }
 
                 // --- 2. 버스 목록 데이터 영역 ---

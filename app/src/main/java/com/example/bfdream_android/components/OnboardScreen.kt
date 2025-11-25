@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -51,6 +52,10 @@ import kotlinx.coroutines.launch
 fun OnboardScreen(
     onComplete: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val buttonSize = screenHeight * 0.2f
+
     val pages = listOf(
         OnboardPageData(
             R.drawable.onboard1,
@@ -153,7 +158,7 @@ fun OnboardScreen(
             currentPage = pagerState.currentPage
         )
 
-        Spacer(modifier = Modifier.weight(0.1f))
+        Spacer(modifier = Modifier.weight(0.06f))
         // 버튼
         if (pagerState.currentPage == pages.size - 1) {
             Button(
@@ -162,7 +167,7 @@ fun OnboardScreen(
                     containerColor = Color(0xFF5409DA),
                     contentColor = Color.White
                 ),
-                modifier = Modifier.width(160.dp).height(60.dp),
+                modifier = Modifier.width(buttonSize).height(60.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text(
@@ -183,7 +188,7 @@ fun OnboardScreen(
                     containerColor = Color(0xFF5409DA).copy(alpha = 0.6f),
                     contentColor = Color.White,
                 ),
-                modifier = Modifier.width(160.dp).height(60.dp),
+                modifier = Modifier.width(buttonSize).height(60.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text(
@@ -212,8 +217,16 @@ data class OnboardPageData(
 // 개별 온보딩 페이지 UI
 @Composable
 fun OnboardPage(data: OnboardPageData) {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val spacerSize = screenHeight * 0.01f
+    val imageSize = screenHeight * 0.35f
+    val imageSize2 = screenHeight * 0.25f
+    val screenWidth = configuration.screenWidthDp
+    val textScale = (screenWidth / 360f).coerceIn(0.4f, 1.3f)
+
     Column(
-        modifier = Modifier.fillMaxSize().padding(50.dp),
+        modifier = Modifier.fillMaxSize().padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -241,23 +254,24 @@ fun OnboardPage(data: OnboardPageData) {
             Image(
                 painter = painterResource(id = data.image),
                 contentDescription = data.title,
-                modifier = Modifier.size(170.dp)
+                modifier = Modifier.size(imageSize2)
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(spacerSize*2))
             Text(
                 text = annotatedString,
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                fontSize = 36.sp,
+                fontSize = 36.sp * textScale,
+                lineHeight = (36.sp * textScale) * 1.3f
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(spacerSize*4))
             Row(
                 modifier = Modifier.width(250.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+//                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -273,14 +287,14 @@ fun OnboardPage(data: OnboardPageData) {
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        fontSize = 16.sp,
+                        fontSize = 16.sp * textScale,
                         color = Color.White,
                     )
                     Text(
                         text = "현재 버스정류장 및\n탑승할 버스 안내",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
-                        fontSize = 12.sp,
+                        fontSize = 12.sp * textScale,
                         color = Color.White,
                     )
                 }
@@ -298,14 +312,14 @@ fun OnboardPage(data: OnboardPageData) {
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        fontSize = 16.sp,
+                        fontSize = 16.sp * textScale,
                         color = Color.White,
                     )
                     Text(
-                        text = "버스 내부 배려석 알림\n기기 통신",
+                        text = "버스 내부 배려석\n알림 기기 통신",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
-                        fontSize = 12.sp,
+                        fontSize = 12.sp * textScale,
                         color = Color.White,
                     )
                 }
@@ -314,19 +328,20 @@ fun OnboardPage(data: OnboardPageData) {
             Image(
                 painter = painterResource(id = data.image),
                 contentDescription = data.title,
-                modifier = Modifier.size(330.dp)
+                modifier = Modifier.size(imageSize)
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(spacerSize))
             Text(
                 text = annotatedString,
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                fontSize = 36.sp,
+                fontSize = 36.sp * textScale,
+                lineHeight = (36.sp * textScale) * 1.3f
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(spacerSize))
             Text(
                 text = data.description,
                 style = MaterialTheme.typography.bodyLarge,
