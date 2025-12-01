@@ -348,7 +348,8 @@ fun OnboardPage(data: OnboardPageData) {
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 color = Color.White,
-                fontSize = 14.sp
+                fontSize = 14.sp,
+                lineHeight = 16.sp
             )
         }
     }

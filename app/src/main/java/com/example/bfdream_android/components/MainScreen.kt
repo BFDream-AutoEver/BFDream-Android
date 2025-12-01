@@ -165,8 +165,7 @@ fun MainScreen(
     if (showConfirmDialog && selectedBusInfo != null) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text(text = "알림 전송 확인") },
-            text = { Text(text = "${selectedBusInfo!!.number}번 버스에 배려석 알림을 전송하시겠습니까?") },
+            title = { Text(text = "${selectedBusInfo!!.number}번 버스에 배려석 알림을 전송하시겠습니까?") },
             confirmButton = {
                 Button(onClick = {
                     btViewModel.sendCourtesySeatNotification()
@@ -184,8 +183,8 @@ fun MainScreen(
     if (currentBtState is BTViewModel.BleConnectionState.Error) {
         AlertDialog(
             onDismissRequest = { btViewModel.resetState() },
-            title = { Text(text = "전송 실패") },
-            text = { Text(text = "버스 배려석 알림 전송에 실패하였습니다. (${currentBtState.message})") },
+            title = { Text(text = "버스 배려석 알림 전송에 실패하였습니다.") },
+            text = { Text(text = "다시 한 번 시도해주세요\n${currentBtState.message}") },
             confirmButton = {
                 Button(onClick = { btViewModel.resetState() }) { Text("확인") }
             }
@@ -310,7 +309,7 @@ fun MainScreen(
                         if (state.busStops.isEmpty()) {
                             item {
                                 EmptyBusStopCard(
-                                    message = "주변에 관심 버스가 없습니다.",
+                                    message = "주변에 운행중인 버스가 없습니다.",
                                     isRefreshing = isRefreshing,
                                     onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
                                 )
@@ -393,7 +392,7 @@ fun BusStopCard(
                         color = Color.Black
                     )
                     Text(
-                        text = "사용자와 최근접의 버스정류장 정보가 표시됩니다.",
+                        text = "사용자와 100m 이내의 버스정류장 정보가 표시됩니다.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
                         maxLines = 1,
