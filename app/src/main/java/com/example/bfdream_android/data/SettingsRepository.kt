@@ -14,21 +14,32 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 class SettingsRepository(private val context: Context) {
 
-    // 2. Preference Key 정의 (이 키로 값을 저장/로드)
+    // Preference Keys
     private val IS_FIRST_RUN_KEY = booleanPreferencesKey("is_first_run")
+    private val IS_SOUND_ON_KEY = booleanPreferencesKey("is_sound_on") // [추가] 사운드 설정 키
 
-    // 3. 첫 실행 여부 Flow (기본값 true)
-    // 앱이 처음 실행되면 저장된 값이 없으므로 기본값(true)을 반환합니다.
+    // --- 첫 실행 여부 ---
     val isFirstRunFlow: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
             preferences[IS_FIRST_RUN_KEY] ?: true
         }
 
-    // 4. 온보딩 완료 시 호출할 함수 (false로 저장)
-    // 이 함수가 호출되면, 다음부터 isFirstRunFlow는 false를 방출합니다.
     suspend fun setOnboardingCompleted() {
         context.dataStore.edit { settings ->
             settings[IS_FIRST_RUN_KEY] = false
+        }
+    }
+
+    // --- [추가] 사운드 설정 관리 ---
+    // 기본값은 true (소리 켜짐)
+    val isSoundOnFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[IS_SOUND_ON_KEY] ?: true
+        }
+
+    suspend fun setSoundOn(isEnabled: Boolean) {
+        context.dataStore.edit { settings ->
+            settings[IS_SOUND_ON_KEY] = isEnabled
         }
     }
 }
