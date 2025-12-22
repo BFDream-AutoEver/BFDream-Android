@@ -49,7 +49,8 @@ interface BusApiService {
         @Query("serviceKey") serviceKey: String = API_KEY,
         @Query("tmX") tmX: Double,
         @Query("tmY") tmY: Double,
-        @Query("radius") radius: Int = 100 // 100m 반경 (TODO: 16으로 수정, 블루투스 정확한 번호의 디바이스로 보내도록 로직 수정)
+        @Query("radius") radius: Int = 100 // 100m 반경
+
     ): StationByPosResponse
 
     /**

@@ -221,7 +221,7 @@ fun OnboardPage(data: OnboardPageData) {
     val screenHeight = configuration.screenHeightDp.dp
     val spacerSize = screenHeight * 0.01f
     val imageSize = screenHeight * 0.35f
-    val imageSize2 = screenHeight * 0.25f
+    val imageSize2 = screenHeight * 0.22f
     val screenWidth = configuration.screenWidthDp
     val textScale = (screenWidth / 360f).coerceIn(0.4f, 1.3f)
 
@@ -257,7 +257,7 @@ fun OnboardPage(data: OnboardPageData) {
                 modifier = Modifier.size(imageSize2)
             )
 
-            Spacer(modifier = Modifier.height(spacerSize*2))
+            Spacer(modifier = Modifier.height(spacerSize*3))
             Text(
                 text = annotatedString,
                 style = MaterialTheme.typography.headlineLarge,

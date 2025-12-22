@@ -63,7 +63,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,7 +71,6 @@ import com.example.bfdream_android.R
 import com.example.bfdream_android.data.BusDataRepository
 import com.example.bfdream_android.data.BusInfo
 import com.example.bfdream_android.data.BusStop
-import com.example.bfdream_android.data.getBusColorByRouteType
 import com.example.bfdream_android.network.BusApiService
 import com.example.bfdream_android.ui.theme.BFDreamAndroidTheme
 import com.example.bfdream_android.viewmodel.BTViewModel
@@ -107,16 +105,13 @@ fun MainScreen(
     val isRefreshing by busViewModel.isRefreshing.collectAsState()
 
     var showConfirmDialog by remember { mutableStateOf(false) }
-
-    // [추가] 성공 다이얼로그 표시 여부를 관리하는 상태 변수
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    // --- 화면 크기 가져오기 및 버튼 크기 계산 [추가됨] ---
+    // --- 화면 크기 가져오기 및 버튼 크기 계산 ---
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
     val screenHeight = configuration.screenHeightDp.dp
-    // 화면 너비의 65%를 버튼 크기로 설정 (너무 작거나 크지 않게 조절 가능)
-    val buttonSize = screenWidth * 0.65f
+    val buttonSize = screenWidth * 0.55f
 
     // --- 선택된 버스 정보 찾기 ---
     val selectedBusInfo: BusInfo? by remember(selectedBusId, busApiState) {
@@ -134,18 +129,15 @@ fun MainScreen(
     // --- Bluetooth 상태 Effect ---
     LaunchedEffect(btConnectionState) {
         val currentState = btConnectionState
-
-        // 1. 성공 상태 감지 시 다이얼로그 띄우기
         if (currentState is BTViewModel.BleConnectionState.Success) {
             showSuccessDialog = true
         }
     }
 
-    // --- [추가] 전송 성공 Dialog ---
+    // --- 전송 성공 Dialog ---
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = {
-                // 다이얼로그 바깥을 터치해서 닫을 때도 상태 초기화
                 showSuccessDialog = false
                 btViewModel.resetState()
             },
@@ -153,7 +145,7 @@ fun MainScreen(
             confirmButton = {
                 Button(onClick = {
                     showSuccessDialog = false
-                    btViewModel.resetState() // 확인 버튼 누르면 초기화
+                    btViewModel.resetState()
                 }) {
                     Text("확인")
                 }
@@ -168,7 +160,7 @@ fun MainScreen(
             title = { Text(text = "${selectedBusInfo!!.number}번 버스에 배려석 알림을 전송하시겠습니까?") },
             confirmButton = {
                 Button(onClick = {
-                    btViewModel.sendCourtesySeatNotification()
+                    btViewModel.sendCourtesySeatNotification(selectedBusInfo!!.number)
                     showConfirmDialog = false
                 }) { Text("확인") }
             },
@@ -197,12 +189,10 @@ fun MainScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
-                            painter = painterResource(R.drawable.main_logo),
+                            painter = painterResource(R.drawable.main_title_logo),
                             contentDescription = "맘편한 이동 로고",
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(126.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "맘편한 이동", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 },
                 actions = {
@@ -210,111 +200,108 @@ fun MainScreen(
                         Image(painter = painterResource(R.drawable.main_help), contentDescription = "도움말", modifier = Modifier.size(26.dp))
                     }
                     IconButton(onClick = onNavigateToProfile) {
-                        Image(painter = painterResource(R.drawable.main_info), contentDescription = "앱 정보", modifier = Modifier.size(26.dp))
+                        Image(painter = painterResource(R.drawable.main_settings), contentDescription = "앱 정보", modifier = Modifier.size(26.dp))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFA1ACF9))
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFA1ACF9))
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 16.dp)
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 32.dp)
+            // --- 1. 상단 고정 영역 (버튼 + 텍스트) ---
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // --- 1. 상단 헤더 영역 ---
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                    val interactionSource = remember { MutableInteractionSource() }
+                val interactionSource = remember { MutableInteractionSource() }
 
-                    // [수정] 동적 크기 적용
+                Box(
+                    modifier = Modifier.size(buttonSize),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // 그림자
                     Box(
-                        modifier = Modifier.size(buttonSize), // buttonSize 사용
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // 그림자
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .offset(y = 4.dp)
-                                .background(Color.Black.copy(alpha = 0.2f), CircleShape)
-                                .blur(radius = 10.dp)
-                        )
-                        // 버튼
-                        Button(
-                            onClick = {
-                                if (selectedBusId != null && !isSending) {
-                                    showConfirmDialog = true
-                                }
-                            },
-                            modifier = Modifier.fillMaxSize(),
-                            shape = CircleShape,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF4E71FF),
-                                disabledContainerColor = Color.White
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
-                            interactionSource = interactionSource,
-                            enabled = selectedBusId != null && !isSending && (currentBtState !is BTViewModel.BleConnectionState.Error)
-                        ) {
-                            if (isSending) {
-                                CircularProgressIndicator(modifier = Modifier.size(100.dp))
-                            } else {
-                                val imageResource = if (selectedBusInfo != null) R.drawable.main_button_selected else R.drawable.main_button
-                                val contentDesc = if (selectedBusInfo != null) "알림 발송 버튼 (활성화)" else "알림 발송 버튼 (비활성화)"
-
-                                // [수정] 이미지가 부모 박스(버튼) 크기를 가득 채우도록 변경
-                                Image(
-                                    painter = painterResource(id = imageResource),
-                                    contentDescription = contentDesc,
-                                    modifier = Modifier.fillMaxSize() // fillMaxSize 사용
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(screenHeight * 0.02f))
-
-                    Text(
-                        text = if (selectedBusInfo == null) "버스 선택 후, 알림을 울려주세요!" else "선택 완료! 알림을 울려주세요",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        modifier = Modifier
+                            .matchParentSize()
+                            .offset(y = 4.dp)
+                            .background(Color.Black.copy(alpha = 0.2f), CircleShape)
+                            .blur(radius = 10.dp)
                     )
+                    // 버튼
+                    Button(
+                        onClick = {
+                            if (selectedBusId != null && !isSending) {
+                                showConfirmDialog = true
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4E71FF),
+                            disabledContainerColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
+                        interactionSource = interactionSource,
+                        enabled = selectedBusId != null && !isSending && (currentBtState !is BTViewModel.BleConnectionState.Error)
+                    ) {
+                        if (isSending) {
+                            CircularProgressIndicator(modifier = Modifier.size(100.dp))
+                        } else {
+                            val imageResource = if (selectedBusInfo != null) R.drawable.main_button_enabled else R.drawable.main_button_default
+                            val contentDesc = if (selectedBusInfo != null) "알림 발송 버튼 (활성화)" else "알림 발송 버튼 (비활성화)"
 
-                    Spacer(modifier = Modifier.height(screenHeight * 0.02f))
-                }
-
-                // --- 2. 버스 목록 데이터 영역 ---
-                when (val state = busApiState) {
-                    is BusApiState.Loading -> {
-                        item {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.padding(top = 32.dp)
+                            Image(
+                                painter = painterResource(id = imageResource),
+                                contentDescription = contentDesc,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
                     }
-                    is BusApiState.Success -> {
-                        if (state.busStops.isEmpty()) {
-                            item {
-                                EmptyBusStopCard(
-                                    message = "주변에 운행중인 버스가 없습니다.",
-                                    isRefreshing = isRefreshing,
-                                    onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
-                                )
-                            }
-                        } else {
+                }
+
+                Spacer(modifier = Modifier.height(screenHeight * 0.02f))
+
+                Text(
+                    text = if (selectedBusInfo == null) "버스 선택 후, 알림을 울려주세요!" else "선택 완료! 알림을 울려주세요",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.height(screenHeight * 0.03f))
+            }
+
+            // --- 2. 스크롤 가능한 버스 목록 영역 ---
+            when (val state = busApiState) {
+                is BusApiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color.White)
+                    }
+                }
+                is BusApiState.Success -> {
+                    if (state.busStops.isEmpty()) {
+                        EmptyBusStopCard(
+                            message = "주변에 운행중인 버스가 없습니다.",
+                            isRefreshing = isRefreshing,
+                            onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
                             items(state.busStops, key = { it.arsId }) { stop ->
                                 BusStopCard(
                                     stop = stop,
@@ -326,44 +313,26 @@ fun MainScreen(
                             }
                         }
                     }
-                    is BusApiState.Error -> {
-                        item {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(top = 32.dp)
-                            ) {
-                                Text(
-                                    text = "버스 정보를 불러오는 데 실패했습니다.\n(${state.message})",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    textAlign = TextAlign.Center
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(
-                                    onClick = { busViewModel.loadBusDataFromCurrentLocation() },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
-                                ) {
-                                    Text("새로고침")
-                                }
-                            }
-                        }
-                    }
-                    is BusApiState.Idle -> {
-                        item {
-                            Text(
-                                text = "버스 정보를 불러오는 중입니다...",
-                                color = Color.White,
-                                modifier = Modifier.padding(top = 32.dp)
-                            )
-                        }
-                    }
+                }
+                is BusApiState.Error -> {
+                    EmptyBusStopCard(
+                        message = "버스 정보를 불러오는 데 실패했습니다.",
+                        isRefreshing = isRefreshing,
+                        onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                    )
+                }
+                is BusApiState.Idle -> {
+                    EmptyBusStopCard(
+                        message = "정류장을 찾는 중...",
+                        isRefreshing = isRefreshing,
+                        onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                    )
                 }
             }
         }
     }
 }
 
-// --- 하위 Composable 함수들 (기존과 동일) ---
 @Composable
 fun BusStopCard(
     stop: BusStop,
@@ -485,12 +454,24 @@ fun BusRow(
                 color = bus.color,
                 fontSize = 18.sp
             )
-            Text(
-                text = bus.arrivalTime,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-                fontSize = 12.sp
-            )
+            Row () {
+                Text(
+                    text = bus.arrivalTime,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    fontSize = 12.sp
+                )
+                if (bus.congestionStatus.isNotEmpty()) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = bus.congestionStatus,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = bus.congestionColor, // 상태별 색상 적용
+                        fontSize = 12.sp
+                    )
+                }
+            }
             Text(
                 text = "${bus.adirection} 방면",
                 style = MaterialTheme.typography.bodyMedium,
@@ -575,8 +556,8 @@ fun MainPreview() {
             BusStop(
                 "05189", "한아름공원", "건대입구역 방면",
                 listOf(
-                    BusInfo("100100199", "2222", getBusColorByRouteType("5"), "3분", "5"),
-                    BusInfo("100100211", "2415", getBusColorByRouteType("3"), "곧 도착", "3")
+//                    BusInfo("100100199", "2222", getBusColorByRouteType("5"), "3분", "5"),
+//                    BusInfo("100100211", "2415", getBusColorByRouteType("3"), "곧 도착", "3")
                 )
             )
         )
@@ -588,7 +569,6 @@ fun MainPreview() {
                     .padding(paddingValues)
                     .padding(16.dp)
             ) {
-                // Preview용 간단한 Column (LazyColumn 대신)
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     previewBusStops.forEach { stop ->
                         BusStopCard(

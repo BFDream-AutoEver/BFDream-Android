@@ -43,8 +43,7 @@ class BTViewModel(private val context: Context) : ViewModel() {
 
     private val settingsRepository = SettingsRepository(context)
 
-    // [핵심 수정] WhileSubscribed -> Eagerly 변경
-    // 화면에 표시되지 않더라도 항상 최신 설정값(DataStore)을 유지하도록 강제합니다.
+    // 항상 최신 설정값 유지 (Eagerly)
     val isSoundOn: StateFlow<Boolean> = settingsRepository.isSoundOnFlow
         .stateIn(
             scope = viewModelScope,
@@ -80,6 +79,9 @@ class BTViewModel(private val context: Context) : ViewModel() {
     private val handler = Handler(Looper.getMainLooper())
     private var isScanning = false
 
+    // [추가] 타겟 디바이스 이름 (예: BF_DREAM_2221)
+    private var targetDeviceName: String? = null
+
     private val serviceUUID: UUID = UUID.fromString(SERVICE_UUID_STRING)
     private val rxCharacteristicUUID: UUID = UUID.fromString(RX_CHARACTERISTIC_UUID_STRING)
 
@@ -106,10 +108,12 @@ class BTViewModel(private val context: Context) : ViewModel() {
         _connectionState.update { BleConnectionState.Idle }
         _isSending.update { false }
         _selectedBusId.value = null
+        targetDeviceName = null // 초기화 시 타겟 이름도 초기화
     }
 
+    // [수정] 버스 번호를 인자로 받아서 타겟 이름을 설정함
     @SuppressLint("MissingPermission")
-    fun sendCourtesySeatNotification() {
+    fun sendCourtesySeatNotification(busNumber: String) {
         val busId = _selectedBusId.value
         if (busId == null) {
             _connectionState.update { BleConnectionState.Error("버스를 먼저 선택해주세요.") }
@@ -126,6 +130,10 @@ class BTViewModel(private val context: Context) : ViewModel() {
             _connectionState.update { BleConnectionState.Error("블루투스가 꺼져있습니다.") }
             return
         }
+
+        // [중요] 타겟 이름 설정 (BF_DREAM_ + 버스번호)
+        targetDeviceName = "BF_DREAM_$busNumber"
+        Log.d(TAG, "타겟 디바이스 설정됨: $targetDeviceName")
 
         _isSending.update { true }
         _connectionState.update { BleConnectionState.Scanning }
@@ -144,7 +152,7 @@ class BTViewModel(private val context: Context) : ViewModel() {
 
         targetDevice = null
         isScanning = true
-        Log.i(TAG, "BLE 스캔 시작")
+        Log.i(TAG, "BLE 스캔 시작 (타겟: $targetDeviceName)")
 
         bluetoothAdapter?.bluetoothLeScanner?.startScan(filters, settings, leScanCallback)
 
@@ -153,7 +161,7 @@ class BTViewModel(private val context: Context) : ViewModel() {
             if (isScanning) {
                 stopScan()
                 if (targetDevice == null) {
-                    _connectionState.update { BleConnectionState.Error("주변에서 버스를 찾을 수 없습니다. (시간 초과)") }
+                    _connectionState.update { BleConnectionState.Error("주변에서 버스($targetDeviceName)를 찾을 수 없습니다.") }
                     _isSending.update { false }
                 }
             }
@@ -173,14 +181,28 @@ class BTViewModel(private val context: Context) : ViewModel() {
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
+
+            // 1. 서비스 UUID 확인
             val serviceUuids = result.scanRecord?.serviceUuids
             val hasOurService = serviceUuids?.any { it.uuid == serviceUUID } == true
 
+            // 2. [추가] 디바이스 이름 확인 (result.scanRecord.deviceName이 더 정확할 수 있음)
+            val scannedName = result.scanRecord?.deviceName ?: result.device.name
+
+            // 3. 로그 (디버깅용)
+            // Log.v(TAG, "기기 발견: $scannedName (UUID 일치: $hasOurService)")
+
+            // 4. [수정] UUID와 이름이 모두 일치하는지 확인
             if (hasOurService && targetDevice == null) {
-                targetDevice = result.device
-                stopScan()
-                _connectionState.update { BleConnectionState.Connecting }
-                connectToDevice(targetDevice!!)
+                if (scannedName == targetDeviceName) {
+                    targetDevice = result.device
+                    stopScan()
+                    Log.i(TAG, "타겟 기기 발견! ($scannedName) 연결 시도...")
+                    _connectionState.update { BleConnectionState.Connecting }
+                    connectToDevice(targetDevice!!)
+                } else {
+                    Log.d(TAG, "UUID는 일치하지만 타겟 버스가 아님. 발견됨: $scannedName, 찾는것: $targetDeviceName")
+                }
             }
         }
 
@@ -192,7 +214,7 @@ class BTViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    // --- 연결 로직 ---
+    // --- 연결 로직 (기존과 동일) ---
     @SuppressLint("MissingPermission")
     private fun connectToDevice(device: BluetoothDevice) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
@@ -216,8 +238,7 @@ class BTViewModel(private val context: Context) : ViewModel() {
         _isSending.update { false }
     }
 
-
-    // --- GATT 콜백 ---
+    // --- GATT 콜백 (기존과 동일) ---
     private val gattCallback = object : BluetoothGattCallback() {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -250,8 +271,7 @@ class BTViewModel(private val context: Context) : ViewModel() {
                 val characteristic = service?.getCharacteristic(rxCharacteristicUUID)
 
                 if (service != null && characteristic != null) {
-                    // [명령어 결정]
-                    // Eagerly 옵션 덕분에 isSoundOn.value는 항상 최신 상태입니다.
+                    // 명령어 결정 (DEFAULT / SILENT)
                     val command = if (isSoundOn.value) "DEFAULT" else "SILENT"
                     Log.d(TAG, "전송할 명령어: $command (SoundOn: ${isSoundOn.value})")
 

@@ -6,56 +6,44 @@ import org.simpleframework.xml.ElementList
 import org.simpleframework.xml.Root
 
 // --- UI용 데이터 클래스 ---
-
-/**
- * MainScreen의 BusStopCard에 표시될 최종 데이터 모델
- */
 data class BusStop(
-    val arsId: String,          // 정류소 고유 ARS ID (e.g., "05189")
-    val name: String,           // 정류소 이름 (e.g., "한아름공원")
-    val direction: String,      // 다음 정류소 (방향)
-    val buses: List<BusInfo>    // 이 정류장에 도착할 *필터링된* 버스 목록
+    val arsId: String,
+    val name: String,
+    val direction: String,
+    val buses: List<BusInfo>
 )
 
-/**
- * MainScreen의 BusRow에 표시될 최종 데이터 모델
- */
 data class BusInfo(
-    val id: String,             // 버스 노선 고유 ID (e.g., "100100211")
-    val number: String,         // 버스 번호 (e.g., "2415")
-    val color: Color,           // 버스 유형에 따른 색상
-    val arrivalTime: String,    // 도착 예정 시간 (e.g., "3분", "곧 도착")
-    val adirection: String      // 방면
+    val id: String,
+    val number: String,
+    val color: Color,
+    val arrivalTime: String,
+    val adirection: String,
+    val congestionStatus: String,
+    val congestionColor: Color
 )
 
-/**
- * assets/bus_route_stops.csv 파일에서 읽어올 데이터 모델
- */
+// CSV 파일 읽기용 데이터 클래스
 data class LocalBusRoute(
     val routeId: String,
-    val routeName: String, // 노선명 (e.g., "2415")
+    val routeName: String,
     val nodeId: String,
-    val arsId: String,     // 정류소 ARS ID (e.g., "05189")
+    val arsId: String,
     val stationName: String
 )
 
-/**
- * API 응답 공통 헤더 (에러 코드 및 메시지 확인용)
- */
+// --- API 응답 모델 ---
 @Root(name = "msgHeader", strict = false)
 data class MsgHeader(
     @field:Element(name = "headerCd", required = false)
-    var headerCd: String? = null, // 0: 정상, 1~: 에러
+    var headerCd: String? = null,
     @field:Element(name = "headerMsg", required = false)
-    var headerMsg: String? = null // 에러 메시지
+    var headerMsg: String? = null
 )
 
-// --- API 응답(XML) 파싱을 위한 데이터 클래스 ---
-
-// 1. getStationByPos (주변 정류소) 응답
 @Root(name = "ServiceResult", strict = false)
 data class StationByPosResponse(
-    @field:Element(name = "msgHeader", required = false) // [추가]
+    @field:Element(name = "msgHeader", required = false)
     var msgHeader: MsgHeader? = null,
     @field:Element(name = "msgBody", required = false)
     var msgBody: StationByPosMsgBody? = null
@@ -69,20 +57,19 @@ data class StationByPosMsgBody(
 
 @Root(name = "itemList", strict = false)
 data class StationByPosItem(
-    @field:Element(name = "arsId", required = false) // 정류소 ARS ID
+    @field:Element(name = "arsId", required = false)
     var arsId: String? = null,
-    @field:Element(name = "stationNm", required = false) // 정류소 이름
+    @field:Element(name = "stationNm", required = false)
     var stationName: String? = null,
-    @field:Element(name = "nextStn", required = false) // 다음 정류소 (방향)
+    @field:Element(name = "nextStn", required = false)
     var nextStation: String? = null,
-    @field:Element(name = "dist", required = false) // 거리 (미터)
-var dist: String? = null
+    @field:Element(name = "dist", required = false)
+    var dist: String? = null
 )
 
-// 2. getStationByUid (특정 정류소 도착 정보) 응답
 @Root(name = "ServiceResult", strict = false)
 data class ArrivalInfoResponse(
-    @field:Element(name = "msgHeader", required = false) // [추가]
+    @field:Element(name = "msgHeader", required = false)
     var msgHeader: MsgHeader? = null,
     @field:Element(name = "msgBody", required = false)
     var msgBody: ArrivalInfoMsgBody? = null
@@ -96,79 +83,81 @@ data class ArrivalInfoMsgBody(
 
 @Root(name = "itemList", strict = false)
 data class ArrivalInfoItem(
-    @field:Element(name = "busRouteId", required = false) // 버스 노선 ID
+    @field:Element(name = "busRouteId", required = false)
     var busRouteId: String? = null,
-    @field:Element(name = "busRouteAbrv", required = false) // 버스 번호
+    @field:Element(name = "busRouteAbrv", required = false)
     var busNumber: String? = null,
-    @field:Element(name = "arrmsg1", required = false) // 첫 번째 도착 메시지
+    @field:Element(name = "arrmsg1", required = false)
     var arrivalMsg1: String? = null,
-    @field:Element(name = "adirection", required = false) // 방면
-    var adirection: String? = null
+    @field:Element(name = "adirection", required = false)
+    var adirection: String? = null,
+
+    // [수정] 혼잡도 관련 태그 3종 세트 (API 버전에 따라 다름)
+    @field:Element(name = "congestion", required = false)
+    var congestion: String? = null,
+    @field:Element(name = "congestion1", required = false)
+    var congestion1: String? = null,
+    @field:Element(name = "reride_Num1", required = false) // XML에서 주로 사용되는 태그
+    var rerideNum1: String? = null
 )
 
-// --- 유틸리티 ---
+// --- 유틸리티 및 상수 ---
 
-/**
- * 서울시 버스 API의 routeType을 기반으로 iOS의 에셋 색상과 동일하게 매핑
- */
+val CongestionComfort = Color(0xFF00C853) // 여유 (Green)
+val CongestionNormal = Color(0xFFFFB300)  // 보통 (Yellow)
+val CongestionCrowded = Color(0xFFD32F2F) // 혼잡 (Red)
+val CongestionUnknown = Color.Gray
+
+val BusBlue = Color(0xFF356DE6)
+val BusGreen = Color(0xFF43C065)
+val BusRed = Color(0xFFE33735)
+val BusYellow = Color(0xFFF7D121)
+
 fun getBusColorByRouteType(routeType: String?): Color {
     return when (routeType) {
-        "1", // 공항
-        "2", // 마을
-        "5", // 지선
-        "6" -> BusGreen // FeederBus_TownBus (Green)
-        "3" -> BusBlue  // 간선, N(심야) Bus (Blue)
-        "4" -> BusRed  // 광역
-        "7" -> BusYellow // 순환 (Yellow)
+        "1", "2", "5", "6" -> BusGreen
+        "3" -> BusBlue
+        "4" -> BusRed
+        "7" -> BusYellow
         else -> Color.Gray
     }
 }
 
-/**
- * [신규] iOS 로직과 동일하게 버스 번호(rtNm)를 분석하여 색상 반환
- * (iOS: BusRouteType.from(busNumber:))
- */
 fun getBusColorByNumber(busNumber: String?): Color {
     if (busNumber.isNullOrBlank()) return Color.Gray
     val trimmed = busNumber.trim()
+    if (trimmed.startsWith("N", ignoreCase = true)) return BusBlue
 
-    // 심야버스 (N으로 시작)
-    if (trimmed.startsWith("N", ignoreCase = true)) {
-        return BusBlue // TrunkBus_NBus (iOS: .simya)
-    }
-
-    // 숫자만 추출
     val digits = trimmed.filter { it.isDigit() }
     val length = digits.length
 
-    if (length == 0) return Color.Gray
-
-    // 광역버스 (9로 시작하는 4자리)
-    if (length == 4 && digits.startsWith('9')) {
-        return BusRed // WideAreaBus (iOS: .gwangyeok)
+    return when {
+        length == 4 && digits.startsWith('9') -> BusRed
+        length == 3 -> BusBlue
+        length == 4 -> BusGreen
+        length == 2 -> BusYellow
+        trimmed.any { !it.isDigit() && !it.equals('N', ignoreCase = true) } -> BusGreen
+        else -> Color.Gray
     }
+}
 
-    // 간선버스 (3자리)
-    if (length == 3) {
-        return BusBlue // TrunkBus_NBus (iOS: .gangseon)
+// 혼잡도 코드 -> 텍스트 변환
+fun getCongestionStatus(code: String?): String {
+    return when (code) {
+        "0", "3" -> "여유"
+        "4" -> "보통"
+        "5" -> "혼잡"
+        "6" -> "매우 혼잡"
+        else -> ""
     }
+}
 
-    // 지선버스 (4자리, 9로 시작하지 않음)
-    if (length == 4) {
-        return BusGreen // FeederBus_TownBus (iOS: .jiseon)
+// 혼잡도 코드 -> 색상 변환
+fun getCongestionColor(code: String?): Color {
+    return when (code) {
+        "0", "3" -> CongestionComfort
+        "4" -> CongestionNormal
+        "5", "6" -> CongestionCrowded
+        else -> CongestionUnknown
     }
-
-    // 순환버스 (2자리)
-    if (length == 2) {
-        return BusYellow // CircularBus (iOS: .sunhwan)
-    }
-
-    // 마을버스 (숫자 외 문자가 포함됨, e.g., "광진05")
-    if (trimmed.any { !it.isDigit() && !it.equals('N', ignoreCase = true) }) {
-        return BusGreen // FeederBus_TownBus (iOS: .maeul)
-    }
-
-    // 공항버스 (iOS 코드에서는 별도 판별 로직 없음)
-    // 기타
-    return Color.Gray // (iOS: .unknown)
 }

@@ -4,51 +4,71 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import com.example.bfdream_android.R
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HelpScreen(
     onNavigateBack: () -> Unit
 ) {
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.help_page),
-            contentDescription = "도움말 페이지",
+    val helpImages = listOf(
+        R.drawable.help_page_1,
+        R.drawable.help_page_2,
+    )
+
+    val pagerState = rememberPagerState(pageCount = { helpImages.size })
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("도움말", color = Color.White, fontWeight = FontWeight.Bold)
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "뒤로가기", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFA1ACF9))
+            )
+        },
+        containerColor = Color(0xFFA1ACF9)
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            contentScale = ContentScale.FillWidth
-        )
-
-        IconButton(
-            onClick = onNavigateBack,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-//                .background(Color.Black.copy(alpha = 0.3f), CircleShape)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
-            Icon(
-                imageVector = Icons.Filled.ArrowBack,
-                contentDescription = "뒤로가기",
-                tint = Color.White
-            )
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                Image(
+                    painter = painterResource(id = helpImages[page]),
+                    contentDescription = "도움말 페이지 ${page + 1}",
+                    modifier = Modifier
+                        .fillMaxSize(),
+//                        .verticalScroll(rememberScrollState()),
+                    contentScale = ContentScale.FillWidth
+                )
+            }
         }
     }
 }

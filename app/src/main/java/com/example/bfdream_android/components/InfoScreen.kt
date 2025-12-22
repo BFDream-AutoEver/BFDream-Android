@@ -49,7 +49,6 @@ import com.example.bfdream_android.viewmodel.BTViewModelFactory
 @Composable
 fun InfoScreen(
     onNavigateBack: () -> Unit,
-    // [추가] ViewModel 주입 (MainScreen과 동일한 팩토리 사용)
     btViewModel: BTViewModel = viewModel(
         factory = BTViewModelFactory(LocalContext.current.applicationContext)
     )
@@ -61,7 +60,6 @@ fun InfoScreen(
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
 
-    // [추가] 사운드 설정 상태 구독
     val isSoundOn by btViewModel.isSoundOn.collectAsState()
 
     Scaffold(
@@ -93,7 +91,7 @@ fun InfoScreen(
             Image(
                 painter = painterResource(id = R.drawable.info_logo),
                 contentDescription = "앱 로고",
-                modifier = Modifier.size(screenHeight * 0.3f)
+                modifier = Modifier.size(screenHeight * 0.24f)
             )
 
             Spacer(modifier = Modifier.height(48.dp))
@@ -106,15 +104,15 @@ fun InfoScreen(
                 Column(
                     modifier = Modifier.padding(top = 26.dp, bottom = 26.dp, start = 8.dp, end = 8.dp)
                 ) {
-                    InfoRow(text = "버전", value = "v 1.0")
-                    Divider(color = Color.LightGray.copy(alpha = 0.4f))
-
-                    // [추가] 사운드 알림 토글 행
                     SwitchInfoRow(
-                        text = "알림 시 사운드 출력",
+                        text = "배려석 알림음 on / off",
+                        subText = "알림음을 꺼도 불빛과 전광판 알림은 유지됩니다.",
                         checked = isSoundOn,
                         onCheckedChange = { btViewModel.toggleSound(it) }
                     )
+                    Divider(color = Color.LightGray.copy(alpha = 0.4f))
+
+                    InfoRow(text = "버전", value = "v 1.0.0")
                     Divider(color = Color.LightGray.copy(alpha = 0.4f))
 
                     ClickableInfoRow(
@@ -135,20 +133,43 @@ fun InfoScreen(
 
 // [추가] 토글 스위치가 있는 행 컴포저블
 @Composable
-fun SwitchInfoRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun SwitchInfoRow(
+    text: String,
+    subText: String = "", // 기본값은 빈 문자열
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF4E71FF)
-        )
-        Spacer(modifier = Modifier.weight(1f))
+        // 텍스트 영역 (제목 + 부연설명)
+        Column(
+            modifier = Modifier.weight(1f), // 남은 공간을 차지하여 스위치를 오른쪽으로 밀어냄
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF4E71FF)
+            )
+            // 부연 설명이 있을 때만 표시
+            if (subText.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = subText,
+                    style = MaterialTheme.typography.bodySmall, // 작은 글씨 크기
+                    color = Color.Gray, // 회색 처리
+                    lineHeight = MaterialTheme.typography.bodySmall.fontSize * 1.2 // 줄간격 살짝 조정
+                )
+            }
+        }
+
+        // Column에 weight(1f)를 주었으므로 Spacer는 필요 없음
+
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
