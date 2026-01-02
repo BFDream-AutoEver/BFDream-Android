@@ -1,6 +1,13 @@
 package com.example.bfdream_android.data
 
 import androidx.compose.ui.graphics.Color
+import com.example.bfdream_android.ui.theme.bl_CircularBus
+import com.example.bfdream_android.ui.theme.bl_FeederBus_TownBus
+import com.example.bfdream_android.ui.theme.bl_TrunkBus_NBus
+import com.example.bfdream_android.ui.theme.bl_WideAreaBus
+import com.example.bfdream_android.ui.theme.state_Comfort
+import com.example.bfdream_android.ui.theme.state_Crowded
+import com.example.bfdream_android.ui.theme.state_Normal
 import org.simpleframework.xml.Element
 import org.simpleframework.xml.ElementList
 import org.simpleframework.xml.Root
@@ -103,15 +110,15 @@ data class ArrivalInfoItem(
 
 // --- 유틸리티 및 상수 ---
 
-val CongestionComfort = Color(0xFF00C853) // 여유 (Green)
-val CongestionNormal = Color(0xFFFFB300)  // 보통 (Yellow)
-val CongestionCrowded = Color(0xFFD32F2F) // 혼잡 (Red)
+val CongestionComfort = state_Comfort // 여유 (Green)
+val CongestionNormal = state_Normal  // 보통 (Yellow)
+val CongestionCrowded = state_Crowded // 혼잡 (Red)
 val CongestionUnknown = Color.Gray
 
-val BusBlue = Color(0xFF356DE6)
-val BusGreen = Color(0xFF43C065)
-val BusRed = Color(0xFFE33735)
-val BusYellow = Color(0xFFF7D121)
+val BusBlue = bl_TrunkBus_NBus
+val BusGreen = bl_FeederBus_TownBus
+val BusRed = bl_WideAreaBus
+val BusYellow = bl_CircularBus
 
 fun getBusColorByRouteType(routeType: String?): Color {
     return when (routeType) {

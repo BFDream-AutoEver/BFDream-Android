@@ -18,6 +18,8 @@ val pr_PeriwinkleBlue = Color(0xFF4E71FF)
 
 val tx_Black = Color(0xFF000000)
 
+val bt_RoyalViolet = Color(0xFF5409DA)
+
 val se_SkyBlue = Color(0xFF8DD8FF)
 val se_MintBlue = Color(0xFFBBFBFF)
 val se_OffWhite = Color(0xFFF9F7F7)

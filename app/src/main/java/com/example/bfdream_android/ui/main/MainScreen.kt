@@ -1,14 +1,7 @@
 package com.example.bfdream_android.ui.main
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,23 +15,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -56,23 +40,29 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bfdream_android.R
 import com.example.bfdream_android.data.BusDataRepository
 import com.example.bfdream_android.data.BusInfo
 import com.example.bfdream_android.data.BusStop
 import com.example.bfdream_android.network.BusApiService
+import com.example.bfdream_android.ui.main.components.BusStopCard
+import com.example.bfdream_android.ui.main.components.EmptyBusStopCard
 import com.example.bfdream_android.ui.theme.BFDreamAndroidTheme
+import com.example.bfdream_android.ui.theme.pr_LavenderPurple
+import com.example.bfdream_android.ui.theme.pr_PeriwinkleBlue
+import com.example.bfdream_android.ui.theme.pr_White
+import com.example.bfdream_android.ui.theme.tx_Black
 import com.example.bfdream_android.viewmodel.BTViewModel
 import com.example.bfdream_android.viewmodel.BTViewModelFactory
 import com.example.bfdream_android.viewmodel.BusApiState
@@ -141,13 +131,13 @@ fun MainScreen(
                 showSuccessDialog = false
                 btViewModel.resetState()
             },
-            title = { Text(text = "알림 전송 성공") },
+            title = { Text(stringResource(R.string.dialog_send_success_title)) },
             confirmButton = {
                 Button(onClick = {
                     showSuccessDialog = false
                     btViewModel.resetState()
                 }) {
-                    Text("확인")
+                    Text(stringResource(R.string.btn_confirm))
                 }
             }
         )
@@ -157,15 +147,24 @@ fun MainScreen(
     if (showConfirmDialog && selectedBusInfo != null) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text(text = "${selectedBusInfo!!.number}번 버스에 배려석 알림을 전송하시겠습니까?") },
+            title = { Text(
+                text = stringResource(
+                    id = R.string.dialog_send_confirm_title,
+                    selectedBusInfo!!.number,
+                )
+            ) },
             confirmButton = {
                 Button(onClick = {
                     btViewModel.sendCourtesySeatNotification(selectedBusInfo!!.number)
                     showConfirmDialog = false
-                }) { Text("확인") }
+                }) {
+                    Text(stringResource(R.string.btn_confirm))
+                }
             },
             dismissButton = {
-                Button(onClick = { showConfirmDialog = false }) { Text("취소") }
+                Button(onClick = { showConfirmDialog = false }) {
+                    Text(stringResource(R.string.btn_cancel))
+                }
             }
         )
     }
@@ -175,10 +174,17 @@ fun MainScreen(
     if (currentBtState is BTViewModel.BleConnectionState.Error) {
         AlertDialog(
             onDismissRequest = { btViewModel.resetState() },
-            title = { Text(text = "버스 배려석 알림 전송에 실패하였습니다.") },
-            text = { Text(text = "다시 한 번 시도해주세요\n${currentBtState.message}") },
+            title = { Text(text = stringResource(R.string.dialog_send_error_title)) },
+            text = { Text(
+                text = stringResource(
+                    id = R.string.dialog_send_error_desc,
+                    currentBtState.message,
+                )
+            ) },
             confirmButton = {
-                Button(onClick = { btViewModel.resetState() }) { Text("확인") }
+                Button(onClick = { btViewModel.resetState() }) {
+                    Text(stringResource(R.string.btn_confirm))
+                }
             }
         )
     }
@@ -197,20 +203,27 @@ fun MainScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToHelp) {
-                        Image(painter = painterResource(R.drawable.main_help), contentDescription = "도움말", modifier = Modifier.size(26.dp))
+                        Image(
+                            painter = painterResource(R.drawable.main_help),
+                            contentDescription = stringResource(R.string.title_help),
+                            modifier = Modifier.size(26.dp)
+                        )
                     }
                     IconButton(onClick = onNavigateToProfile) {
-                        Image(painter = painterResource(R.drawable.main_settings), contentDescription = "앱 정보", modifier = Modifier.size(26.dp))
+                        Image(
+                            painter = painterResource(R.drawable.main_settings),
+                            contentDescription = stringResource(R.string.title_info),
+                            modifier = Modifier.size(26.dp))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFA1ACF9))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = pr_LavenderPurple)
             )
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFA1ACF9))
+                .background(pr_LavenderPurple)
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
         ) {
@@ -232,7 +245,7 @@ fun MainScreen(
                         modifier = Modifier
                             .matchParentSize()
                             .offset(y = 4.dp)
-                            .background(Color.Black.copy(alpha = 0.2f), CircleShape)
+                            .background(tx_Black.copy(alpha = 0.2f), CircleShape)
                             .blur(radius = 10.dp)
                     )
                     // 버튼
@@ -245,18 +258,26 @@ fun MainScreen(
                         modifier = Modifier.fillMaxSize(),
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4E71FF),
-                            disabledContainerColor = Color.White
+                            containerColor = pr_PeriwinkleBlue,
+                            disabledContainerColor = pr_White,
                         ),
                         elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
                         interactionSource = interactionSource,
-                        enabled = selectedBusId != null && !isSending && (currentBtState !is BTViewModel.BleConnectionState.Error)
+                        enabled =
+                            selectedBusId != null &&
+                            !isSending &&
+                            (currentBtState !is BTViewModel.BleConnectionState.Error)
                     ) {
                         if (isSending) {
                             CircularProgressIndicator(modifier = Modifier.size(100.dp))
                         } else {
-                            val imageResource = if (selectedBusInfo != null) R.drawable.main_button_enabled else R.drawable.main_button_default
-                            val contentDesc = if (selectedBusInfo != null) "알림 발송 버튼 (활성화)" else "알림 발송 버튼 (비활성화)"
+                            val imageResource =
+                                if (selectedBusInfo != null) R.drawable.main_button_enabled
+                                else R.drawable.main_button_default
+
+                            val contentDesc =
+                                if (selectedBusInfo != null) stringResource(R.string.main_btn_send_enabled)
+                                else stringResource(R.string.main_btn_send_disabled)
 
                             Image(
                                 painter = painterResource(id = imageResource),
@@ -270,10 +291,13 @@ fun MainScreen(
                 Spacer(modifier = Modifier.height(screenHeight * 0.02f))
 
                 Text(
-                    text = if (selectedBusInfo == null) "버스 선택 후, 알림을 울려주세요!" else "선택 완료! 알림을 울려주세요",
+                    text =
+                        if (selectedBusInfo == null) stringResource(R.string.main_guide_default)
+                        else stringResource(R.string.main_guide_selected),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = pr_White,
+                    modifier = Modifier.semantics { heading() },
                 )
 
                 Spacer(modifier = Modifier.height(screenHeight * 0.03f))
@@ -286,13 +310,13 @@ fun MainScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = Color.White)
+                        CircularProgressIndicator(color = pr_White)
                     }
                 }
                 is BusApiState.Success -> {
                     if (state.busStops.isEmpty()) {
                         EmptyBusStopCard(
-                            message = "주변에 운행중인 버스가 없습니다.",
+                            message = stringResource(R.string.bus_empty_nearby),
                             isRefreshing = isRefreshing,
                             onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
                         )
@@ -316,232 +340,17 @@ fun MainScreen(
                 }
                 is BusApiState.Error -> {
                     EmptyBusStopCard(
-                        message = "버스 정보를 불러오는 데 실패했습니다.",
+                        message = stringResource(R.string.bus_load_error),
                         isRefreshing = isRefreshing,
                         onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
                     )
                 }
                 is BusApiState.Idle -> {
                     EmptyBusStopCard(
-                        message = "정류장을 찾는 중...",
+                        message = stringResource(R.string.bus_loading),
                         isRefreshing = isRefreshing,
                         onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
                     )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun BusStopCard(
-    stop: BusStop,
-    selectedBusId: String?,
-    isRefreshing: Boolean,
-    onBusSelected: (String?) -> Unit,
-    onRefresh: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stop.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = Color.Black
-                    )
-                    Text(
-                        text = "사용자와 100m 이내의 버스정류장 정보가 표시됩니다.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray,
-                        maxLines = 1,
-                        fontSize = 12.sp,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                    )
-                }
-                IconButton(onClick = onRefresh, enabled = !isRefreshing) {
-                    if (isRefreshing) {
-                        val transition = rememberInfiniteTransition(label = "refresh_transition")
-                        val rotation by transition.animateFloat(
-                            initialValue = 0f,
-                            targetValue = 360f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(1000, easing = LinearEasing),
-                                repeatMode = RepeatMode.Restart
-                            ),
-                            label = "refresh_rotation"
-                        )
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = "새로고침 중",
-                            tint = Color.Gray,
-                            modifier = Modifier.rotate(rotation)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = "새로고침",
-                            tint = Color.Gray
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Column {
-                stop.buses.forEachIndexed { index, bus ->
-                    BusRow(
-                        bus = bus,
-                        isSelected = bus.id == selectedBusId,
-                        onClick = {
-                            val newSelection = if (bus.id == selectedBusId) null else bus.id
-                            onBusSelected(newSelection)
-                        }
-                    )
-                    if (index < stop.buses.lastIndex) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-}
-
-@Composable
-fun BusRow(
-    bus: BusInfo,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.bus),
-            contentDescription = "버스",
-            tint = bus.color,
-            modifier = Modifier.size(32.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            Text(
-                text = bus.number,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = bus.color,
-                fontSize = 18.sp
-            )
-            Row () {
-                Text(
-                    text = bus.arrivalTime,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
-                    fontSize = 12.sp
-                )
-                if (bus.congestionStatus.isNotEmpty()) {
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = bus.congestionStatus,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = bus.congestionColor, // 상태별 색상 적용
-                        fontSize = 12.sp
-                    )
-                }
-            }
-            Text(
-                text = "${bus.adirection} 방면",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-                fontSize = 12.sp
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Icon(
-            imageVector = Icons.Filled.CheckCircle,
-            contentDescription = if (isSelected) "선택됨" else "선택하기",
-            tint = if (isSelected) bus.color else Color.LightGray,
-            modifier = Modifier.size(32.dp)
-        )
-    }
-}
-
-@Composable
-fun EmptyBusStopCard(
-    message: String,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color.Black
-                )
-                IconButton(onClick = onRefresh, enabled = !isRefreshing) {
-                    if (isRefreshing) {
-                        val transition = rememberInfiniteTransition(label = "refresh_transition")
-                        val rotation by transition.animateFloat(
-                            initialValue = 0f,
-                            targetValue = 360f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(1000, easing = LinearEasing),
-                                repeatMode = RepeatMode.Restart
-                            ),
-                            label = "refresh_rotation"
-                        )
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = "새로고침 중",
-                            tint = Color.Gray,
-                            modifier = Modifier.rotate(rotation)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = "새로고침",
-                            tint = Color.Gray
-                        )
-                    }
                 }
             }
         }

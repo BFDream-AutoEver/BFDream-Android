@@ -17,11 +17,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.example.bfdream_android.R
+import com.example.bfdream_android.ui.theme.pr_LavenderPurple
+import com.example.bfdream_android.ui.theme.pr_White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,23 +35,36 @@ fun HelpScreen(
         R.drawable.help_page_2,
     )
 
+    val helpDescriptions = listOf(
+        R.string.help_desc_1,
+        R.string.help_desc_2,
+    )
+
     val pagerState = rememberPagerState(pageCount = { helpImages.size })
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("도움말", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.title_help),
+                        color = pr_White,
+                        fontWeight = FontWeight.Bold,
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "뒤로가기", tint = Color.White)
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.desc_back),
+                            tint = pr_White,
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFA1ACF9))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = pr_LavenderPurple)
             )
         },
-        containerColor = Color(0xFFA1ACF9)
+        containerColor = pr_LavenderPurple,
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -62,10 +77,8 @@ fun HelpScreen(
             ) { page ->
                 Image(
                     painter = painterResource(id = helpImages[page]),
-                    contentDescription = "도움말 페이지 ${page + 1}",
-                    modifier = Modifier
-                        .fillMaxSize(),
-//                        .verticalScroll(rememberScrollState()),
+                    contentDescription = stringResource(id = helpDescriptions[page]),
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.FillWidth
                 )
             }

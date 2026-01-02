@@ -56,7 +56,7 @@ fun NavGraph(
             )
         }
 
-        // 3. 메인 내비게이션 그래프 (이하 동일)
+        // 3. 메인 내비게이션 그래프
         navigation(
             startDestination = Routes.Main.route,
             route = Routes.MainRoot.route

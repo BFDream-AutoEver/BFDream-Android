@@ -11,10 +11,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.bfdream_android.R
+import com.example.bfdream_android.ui.theme.pr_LavenderPurple
 import com.example.bfdream_android.viewmodel.OnboardingViewModel
 import com.example.bfdream_android.viewmodel.SplashDestination
 
@@ -39,12 +40,12 @@ fun SplashScreen(
 
     // 3. 스플래시 UI
     Box(
-        modifier = modifier.background(Color(0xFFA1ACF9)),
+        modifier = modifier.background(pr_LavenderPurple),
         contentAlignment = Alignment.Center
     ) {
         Image(
             painter = painterResource(id = R.drawable.splash),
-            contentDescription = "맘편한 이동, 예비 엄마의 마음 편한 이동",
+            contentDescription = stringResource(R.string.splash_desc),
             modifier = Modifier.size(280.dp)
         )
     }
