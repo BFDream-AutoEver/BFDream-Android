@@ -1,4 +1,4 @@
-package com.example.bfdream_android.navigation
+package com.example.bfdream_android.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -7,9 +7,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.example.bfdream_android.components.OnboardScreen
-import com.example.bfdream_android.components.SplashScreen
-import com.example.bfdream_android.model.Routes
+import com.example.bfdream_android.ui.onboarding.OnboardScreen
+import com.example.bfdream_android.ui.onboarding.SplashScreen
 import com.example.bfdream_android.viewmodel.OnboardingViewModel
 
 @Composable

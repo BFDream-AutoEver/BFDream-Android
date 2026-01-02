@@ -1,4 +1,4 @@
-package com.example.bfdream_android.model
+package com.example.bfdream_android.ui.navigation
 
 sealed class Routes(val route: String) {
     // 1. 최상위 경로

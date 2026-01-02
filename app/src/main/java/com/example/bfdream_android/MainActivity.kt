@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
-import com.example.bfdream_android.navigation.NavGraph
+import com.example.bfdream_android.ui.navigation.NavGraph
 import com.example.bfdream_android.ui.theme.BFDreamAndroidTheme
 
 class MainActivity : ComponentActivity() {

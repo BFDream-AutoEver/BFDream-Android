@@ -1,4 +1,4 @@
-package com.example.bfdream_android.components
+package com.example.bfdream_android.ui.onboarding
 
 import android.Manifest
 import android.os.Build

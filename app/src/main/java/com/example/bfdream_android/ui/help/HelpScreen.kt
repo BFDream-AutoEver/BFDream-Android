@@ -1,4 +1,4 @@
-package com.example.bfdream_android.components
+package com.example.bfdream_android.ui.help
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box

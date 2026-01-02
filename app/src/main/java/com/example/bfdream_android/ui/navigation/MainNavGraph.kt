@@ -1,12 +1,11 @@
-package com.example.bfdream_android.navigation
+package com.example.bfdream_android.ui.navigation
 
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import com.example.bfdream_android.components.HelpScreen
-import com.example.bfdream_android.components.InfoScreen
-import com.example.bfdream_android.components.MainScreen
-import com.example.bfdream_android.model.Routes
+import com.example.bfdream_android.ui.help.HelpScreen
+import com.example.bfdream_android.ui.info.InfoScreen
+import com.example.bfdream_android.ui.main.MainScreen
 
 fun NavGraphBuilder.mainNavGraph(navController: NavController) {
     // 메인 화면
