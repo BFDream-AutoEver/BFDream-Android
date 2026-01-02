@@ -1,3 +1,74 @@
 <resources>
-    <string name="app_name">BFDream-Android</string>
+    <string name="app_name">맘편한 이동</string>
+
+    <string name="btn_confirm">확인</string>
+    <string name="btn_cancel">취소</string>
+    <string name="btn_close">닫기</string>
+    <string name="desc_back">뒤로가기</string>
+    <string name="desc_refresh">새로고침</string>
+    <string name="desc_refreshing">새로고침 중</string>
+
+    <string name="splash_desc">맘편한 이동, 예비 엄마의 마음 편한 이동</string>
+
+    <string name="onboard_1_title">안녕하세요 :)\n맘편한 이동입니다</string>
+    <string name="onboard_1_highlight">맘편한 이동</string>
+    <string name="onboard_1_desc">임산부 분들의 편안하고 안전한 버스 배려석 탑승을 도와드릴게요!</string>
+
+    <string name="onboard_2_title">부담감 제로</string>
+    <string name="onboard_2_highlight">제로</string>
+    <string name="onboard_2_desc">탑승하려는 버스의 임산부 배려석에 알림을 줄 수 있어요! 이로 인해 탑승객들의 자연스러운 배려석 양보가 가능합니다.</string>
+
+    <string name="onboard_3_title">쉽고 간편하게</string>
+    <string name="onboard_3_highlight">간편하게</string>
+    <string name="onboard_3_desc">GPS와 실시간 버스 데이터 기반으로 주변 정류장의 탑승할 버스 도착 정보를 확인하고, 알림만 울리면 끝!</string>
+
+    <string name="onboard_4_title">임산부들만 이용가능</string>
+    <string name="onboard_4_highlight">임산부</string>
+    <string name="onboard_4_desc">임산부 신고 후, 해당 서비스를 이용하실 수 있습니다. 임산부 신고는 e보건소 혹은 직접 방문, 아이마중 어플 등을 통해 가능합니다.</string>
+
+    <string name="onboard_permission_title">맘편한 이동을 위한\n필수 접근권한 안내</string>
+    <string name="onboard_permission_highlight">맘편한 이동</string>
+    <string name="onboard_loc_title">위치</string>
+    <string name="onboard_loc_desc">현재 버스정류장 및\n탑승할 버스 안내</string>
+    <string name="onboard_bt_title">근처 기기</string>
+    <string name="onboard_bt_desc">버스 내부 배려석\n알림 기기 통신</string>
+
+    <string name="btn_start">시작하기</string>
+    <string name="btn_next">다음</string>
+    <string name="msg_permission_granted">권한이 허용되었습니다.</string>
+    <string name="msg_permission_denied">앱 기능 사용을 위해 권한 허용이 필요합니다.</string>
+
+    <string name="main_title_desc">맘편한 이동 로고</string>
+    <string name="main_menu_help">도움말</string>
+    <string name="main_menu_info">앱 정보</string>
+    <string name="main_btn_send_enabled">알림 발송 버튼 (활성화)</string>
+    <string name="main_btn_send_disabled">알림 발송 버튼 (비활성화)</string>
+    <string name="main_guide_default">버스 선택 후, 알림을 울려주세요!</string>
+    <string name="main_guide_selected">선택 완료! 알림을 울려주세요</string>
+
+    <string name="dialog_send_success_title">알림 전송 성공</string>
+    <string name="dialog_send_confirm_title">%s번 버스에 배려석 알림을 전송하시겠습니까?</string>
+    <string name="dialog_send_error_title">버스 배려석 알림 전송에 실패하였습니다.</string>
+    <string name="dialog_send_error_desc">다시 한 번 시도해주세요\n%s</string>
+
+    <string name="bus_empty_nearby">주변에 운행중인 버스가 없습니다.</string>
+    <string name="bus_load_error">버스 정보를 불러오는 데 실패했습니다.</string>
+    <string name="bus_loading">정류장을 찾는 중...</string>
+    <string name="bus_stop_distance_info">사용자와 100m 이내의 버스정류장 정보가 표시됩니다.</string>
+    <string name="bus_direction">%s 방면</string>
+    <string name="bus_selected">선택됨</string>
+    <string name="bus_select">선택하기</string>
+    <string name="desc_bus_icon">버스</string>
+
+    <string name="title_help">도움말</string>
+    <string name="desc_help_page">도움말 페이지 %d</string>
+
+    <string name="title_info">앱 정보</string>
+    <string name="desc_app_logo">앱 로고</string>
+    <string name="info_sound_title">배려석 알림음 on / off</string>
+    <string name="info_sound_desc">알림음을 꺼도 불빛과 전광판 알림은 유지됩니다.</string>
+    <string name="info_version">버전</string>
+    <string name="info_inquiry">앱 문의</string>
+    <string name="info_policy">개인정보 처리 방침 및 이용약관</string>
+    <string name="desc_move">이동</string>
 </resources>
