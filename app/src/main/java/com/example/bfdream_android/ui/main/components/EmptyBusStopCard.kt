@@ -61,6 +61,7 @@ fun EmptyBusStopCard(
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = tx_Black,
+                    modifier = Modifier.weight(1f),
                 )
                 IconButton(onClick = onRefresh, enabled = !isRefreshing) {
                     if (isRefreshing) {

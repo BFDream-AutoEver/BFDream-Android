@@ -59,7 +59,7 @@ fun SwitchInfoRow(
                     text = subText,
                     style = MaterialTheme.typography.bodySmall, // 작은 글씨 크기
                     color = Color.Gray, // 회색 처리
-                    lineHeight = MaterialTheme.typography.bodySmall.fontSize * 1.2 // 줄간격 살짝 조정
+                    lineHeight = MaterialTheme.typography.bodySmall.fontSize * 1.2, // 줄간격 살짝 조정
                 )
             }
         }

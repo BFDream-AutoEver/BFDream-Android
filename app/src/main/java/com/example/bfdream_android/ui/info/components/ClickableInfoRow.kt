@@ -35,8 +35,9 @@ fun ClickableInfoRow(text: String, onClick: () -> Unit) {
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
             color = pr_PeriwinkleBlue,
+            modifier = Modifier.weight(1f),
         )
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.size(8.dp))
         Icon(
             imageVector = Icons.Default.KeyboardArrowRight,
             contentDescription = stringResource(R.string.desc_move),

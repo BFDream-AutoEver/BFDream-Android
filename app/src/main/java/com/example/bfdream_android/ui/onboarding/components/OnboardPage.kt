@@ -6,10 +6,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,8 +50,13 @@ fun OnboardPage(data: OnboardPageData) {
     val screenWidth = configuration.screenWidthDp
     val textScale = (screenWidth / 360f).coerceIn(0.4f, 1.3f)
 
+    val scrollState = rememberScrollState()
+
     Column(
-        modifier = Modifier.fillMaxSize().padding(20.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -91,16 +99,17 @@ fun OnboardPage(data: OnboardPageData) {
 
             Spacer(modifier = Modifier.height(spacerSize*4))
             Row(
-                modifier = Modifier.width(250.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-//                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.Top,
             ) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f),
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.location),
-                        contentDescription = "위치 아이콘",
+                        contentDescription = "위치 권한",
                         modifier = Modifier.size(48.dp)
                     )
                     Spacer(modifier = Modifier.height(20.dp))
@@ -120,12 +129,16 @@ fun OnboardPage(data: OnboardPageData) {
                         color = pr_White,
                     )
                 }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f),
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.bluetooth),
-                        contentDescription = "블루투스 아이콘",
+                        contentDescription = "근처 기기 권한",
                         modifier = Modifier.size(48.dp)
                     )
                     Spacer(modifier = Modifier.height(20.dp))
@@ -171,7 +184,7 @@ fun OnboardPage(data: OnboardPageData) {
                 textAlign = TextAlign.Center,
                 color = pr_White,
                 fontSize = 14.sp,
-                lineHeight = 16.sp
+//                lineHeight = 16.sp
             )
         }
     }
