@@ -37,7 +37,7 @@ import java.util.UUID
 // 상수 정의
 private const val SERVICE_UUID_STRING = "12345678-1234-1234-1234-123456789ABC"
 private const val RX_CHARACTERISTIC_UUID_STRING = "12345678-1234-1234-1234-123456789ABD"
-private const val SCAN_PERIOD: Long = 10000 // 10초 스캔
+private const val SCAN_PERIOD: Long = 5000 // 5초 스캔
 
 class BTViewModel(private val context: Context) : ViewModel() {
 

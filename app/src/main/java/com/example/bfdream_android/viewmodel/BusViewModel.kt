@@ -25,6 +25,7 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,13 +56,8 @@ class BusViewModel(
     private val TAG = "BusViewModel"
 
     init {
-        // [수정] 모든 버스를 보여줄 것이므로 굳이 CSV 필터 데이터를 로드할 필요가 없어졌습니다.
-        // viewModelScope.launch {
-        //     busRepo.loadCsvData()
-        // }
-
-        // 바로 데이터 로드 시작
         loadBusDataFromCurrentLocation()
+        startAutoRefresh()
     }
 
     private val _isRefreshing = MutableStateFlow(false)
@@ -195,6 +191,17 @@ class BusViewModel(
                 _busApiState.value = BusApiState.Error("버스 정보를 가져오는 중 오류가 발생했습니다: ${e.message}")
             } finally {
                 _isRefreshing.value = false
+            }
+        }
+    }
+
+    private fun startAutoRefresh() {
+        viewModelScope.launch {
+            // viewModel이 살아있는 동안 무한 반복
+            while (true) {
+                delay(60000L) // 60,000ms = 1분 대기
+                Log.d(TAG, "자동 갱신 실행 (1분 경과)")
+                loadBusDataFromCurrentLocation()
             }
         }
     }

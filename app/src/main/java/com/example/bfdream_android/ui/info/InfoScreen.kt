@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -22,11 +23,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,6 +62,9 @@ fun InfoScreen(
     )
 ) {
     val uriHandler = LocalUriHandler.current
+    var showExternalLinkDialog by remember { mutableStateOf(false) }
+    var selectedUrl by remember { mutableStateOf("") }
+
     val inquiryUrl = "https://forms.gle/rnSD44sUEuy1nLaH6"
     val policyUrl = "https://important-hisser-903.notion.site/10-22-ver-29a65f12c44480b6b591e726c5c80f89?pvs=74"
 
@@ -141,15 +149,51 @@ fun InfoScreen(
 
                     ClickableInfoRow(
                         text = stringResource(R.string.info_inquiry),
-                        onClick = { uriHandler.openUri(inquiryUrl) },
+                        onClick = {
+                            selectedUrl = inquiryUrl
+                            showExternalLinkDialog = true
+                        },
                     )
                     Divider(color = Color.LightGray.copy(alpha = 0.4f))
 
                     ClickableInfoRow(
                         text = stringResource(R.string.info_policy),
-                        onClick = { uriHandler.openUri(policyUrl) },
+                        onClick = {
+                            selectedUrl = policyUrl
+                            showExternalLinkDialog = true
+                        },
                     )
                 }
+            }
+
+            if (showExternalLinkDialog) {
+                AlertDialog(
+                    onDismissRequest = { showExternalLinkDialog = false },
+                    title = { Text(text = "외부 링크 이동") },
+                    text = {
+                        Text(text = "선택하신 페이지로 이동하시겠습니까?\n앱을 벗어나 브라우저가 실행됩니다.")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                // 확인 버튼 클릭 시 실제 이동
+                                if (selectedUrl.isNotEmpty()) {
+                                    uriHandler.openUri(selectedUrl)
+                                }
+                                showExternalLinkDialog = false
+                            }
+                        ) {
+                            Text("이동")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { showExternalLinkDialog = false }
+                        ) {
+                            Text("취소")
+                        }
+                    }
+                )
             }
         }
     }

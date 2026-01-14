@@ -1,5 +1,16 @@
 package com.example.bfdream_android.ui.main
 
+import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.location.LocationManager
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.provider.Settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -30,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -118,9 +130,17 @@ fun MainScreen(
 
     // --- Bluetooth 상태 Effect ---
     LaunchedEffect(btConnectionState) {
-        val currentState = btConnectionState
-        if (currentState is BTViewModel.BleConnectionState.Success) {
-            showSuccessDialog = true
+        when (val state = btConnectionState) {
+            is BTViewModel.BleConnectionState.Success -> {
+                // 성공 시: 짧게 진동 (200ms)
+                vibratePhone(appContext, 200L)
+                showSuccessDialog = true
+            }
+            is BTViewModel.BleConnectionState.Error -> {
+                // 실패 시: 조금 길게 진동 (500ms)
+                vibratePhone(appContext, 500L)
+            }
+            else -> {} // Idle, Connecting 등은 무시
         }
     }
 
@@ -189,6 +209,78 @@ fun MainScreen(
         )
     }
 
+    // 1. 시스템 상태(GPS, BT)를 감지할 State
+    var isGpsEnabled by remember { mutableStateOf(true) }
+    var isBluetoothEnabled by remember { mutableStateOf(true) }
+
+    // 2. BroadcastReceiver 등록 (앱 실행 중 실시간 감지)
+    DisposableEffect(Unit) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                when (intent.action) {
+                    LocationManager.PROVIDERS_CHANGED_ACTION -> {
+                        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                        isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                    }
+                    BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                        val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+                        isBluetoothEnabled = (state == BluetoothAdapter.STATE_ON)
+                    }
+                }
+            }
+        }
+
+        // 초기 상태 확인 (앱 켜자마자 확인)
+        val locationManager = appContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+
+        val bluetoothManager = appContext.getSystemService(Context.BLUETOOTH_SERVICE) as android.bluetooth.BluetoothManager
+        isBluetoothEnabled = bluetoothManager.adapter?.isEnabled == true
+
+        // 필터 등록
+        val filter = IntentFilter().apply {
+            addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
+            addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+        }
+        appContext.registerReceiver(receiver, filter)
+
+        onDispose {
+            appContext.unregisterReceiver(receiver)
+        }
+    }
+
+    // 3. 경고 다이얼로그 (GPS나 블루투스 둘 중 하나라도 꺼지면 표시)
+    if (!isGpsEnabled || !isBluetoothEnabled) {
+        AlertDialog(
+            onDismissRequest = { /* 강제 종료를 막기 위해 빈칸 혹은 앱 종료 로직 */ },
+            title = { Text("서비스 이용 제한") },
+            text = {
+                val message = buildString {
+                    append("원활한 서비스 이용을 위해 다음 기능을 켜주세요:\n")
+                    if (!isBluetoothEnabled) append("- 블루투스\n")
+                    if (!isGpsEnabled) append("- 위치 서비스(GPS)")
+                }
+                Text(message)
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // 설정 화면으로 이동
+                        val intent = Intent(Settings.ACTION_SETTINGS)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        appContext.startActivity(intent)
+                    }
+                ) {
+                    Text("설정으로 이동")
+                }
+            },
+            dismissButton = {
+                // 선택사항: 앱을 계속 보고싶다면 '닫기' 버튼 제공,
+                // 하지만 필수 기능이라면 버튼을 없애거나 앱 종료 버튼을 넣기도 함
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -196,7 +288,7 @@ fun MainScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(R.drawable.main_title_logo),
-                            contentDescription = "맘편한 이동 로고",
+                            contentDescription = "맘편한 이동",
                             modifier = Modifier.size(126.dp)
                         )
                     }
@@ -354,6 +446,23 @@ fun MainScreen(
                 }
             }
         }
+    }
+}
+
+private fun vibratePhone(context: Context, durationMillis: Long) {
+    val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        vibratorManager.defaultVibrator
+    } else {
+        @Suppress("DEPRECATION")
+        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        vibrator.vibrate(VibrationEffect.createOneShot(durationMillis, VibrationEffect.DEFAULT_AMPLITUDE))
+    } else {
+        @Suppress("DEPRECATION")
+        vibrator.vibrate(durationMillis)
     }
 }
 

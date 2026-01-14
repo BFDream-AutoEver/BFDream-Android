@@ -53,6 +53,7 @@ fun OnboardScreen(
 
     val pages = listOf(
         OnboardPageData(
+            1,
             R.drawable.onboard1,
             stringResource(R.string.onboard_1_title),
             stringResource(R.string.onboard_1_highlight),
@@ -60,6 +61,7 @@ fun OnboardScreen(
             stringResource(R.string.onboard_1_desc),
         ),
         OnboardPageData(
+            2,
             R.drawable.onboard2,
             stringResource(R.string.onboard_2_title),
             stringResource(R.string.onboard_2_highlight),
@@ -67,6 +69,7 @@ fun OnboardScreen(
             stringResource(R.string.onboard_2_desc),
         ),
         OnboardPageData(
+            3,
             R.drawable.onboard3,
             stringResource(R.string.onboard_3_title),
             stringResource(R.string.onboard_3_highlight),
@@ -74,6 +77,7 @@ fun OnboardScreen(
             stringResource(R.string.onboard_3_desc),
         ),
         OnboardPageData(
+            4,
             R.drawable.onboard4,
             stringResource(R.string.onboard_4_title),
             stringResource(R.string.onboard_4_highlight),
@@ -81,6 +85,7 @@ fun OnboardScreen(
             stringResource(R.string.onboard_4_desc),
         ),
         OnboardPageData(
+            5,
             R.drawable.info_logo,
             stringResource(R.string.onboard_permission_title),
             stringResource(R.string.onboard_permission_highlight),
@@ -150,7 +155,10 @@ fun OnboardScreen(
             state = pagerState,
             modifier = Modifier.weight(1f)
         ) { pageIndex ->
-            OnboardPage(data = pages[pageIndex])
+            OnboardPage(
+                data = pages[pageIndex],
+                isSelected = (pagerState.currentPage == pageIndex)
+            )
         }
 
         // 페이지 인디케이터

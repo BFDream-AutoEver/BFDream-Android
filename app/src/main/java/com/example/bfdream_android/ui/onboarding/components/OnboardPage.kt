@@ -1,6 +1,7 @@
 package com.example.bfdream_android.ui.onboarding.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,12 +17,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -30,8 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bfdream_android.R
 import com.example.bfdream_android.ui.theme.pr_White
+import kotlinx.coroutines.delay
 
 data class OnboardPageData(
+    val pageNumber: Number,
     val image: Int,
     val title: String,
     val titleHighlight: String,
@@ -41,7 +50,10 @@ data class OnboardPageData(
 )
 
 @Composable
-fun OnboardPage(data: OnboardPageData) {
+fun OnboardPage(
+    data: OnboardPageData,
+    isSelected: Boolean,
+) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val spacerSize = screenHeight * 0.01f
@@ -51,6 +63,19 @@ fun OnboardPage(data: OnboardPageData) {
     val textScale = (screenWidth / 360f).coerceIn(0.4f, 1.3f)
 
     val scrollState = rememberScrollState()
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(isSelected) {
+        if (isSelected) {
+            // 페이지 전환 애니메이션이 끝날 때까지 살짝 대기 (TalkBack 안정성)
+            delay(300)
+            try {
+                focusRequester.requestFocus()
+            } catch (e: Exception) {
+                // 컴포지션 타이밍 이슈 방지
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -83,8 +108,11 @@ fun OnboardPage(data: OnboardPageData) {
         if (data.isLast) {
             Image(
                 painter = painterResource(id = data.image),
-                contentDescription = data.title,
-                modifier = Modifier.size(imageSize2)
+                contentDescription = "페이지 ${data.pageNumber}" + data.title,
+                modifier = Modifier
+                    .size(imageSize2)
+                    .focusRequester(focusRequester)
+                    .focusable()
             )
 
             Spacer(modifier = Modifier.height(spacerSize*3))
@@ -105,7 +133,9 @@ fun OnboardPage(data: OnboardPageData) {
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics { isTraversalGroup = true },
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.location),
@@ -134,7 +164,9 @@ fun OnboardPage(data: OnboardPageData) {
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics { isTraversalGroup = true },
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.bluetooth),
@@ -162,8 +194,11 @@ fun OnboardPage(data: OnboardPageData) {
         } else {
             Image(
                 painter = painterResource(id = data.image),
-                contentDescription = data.title,
-                modifier = Modifier.size(imageSize)
+                contentDescription = "페이지 ${data.pageNumber}" + data.title,
+                modifier = Modifier
+                    .size(imageSize)
+                    .focusRequester(focusRequester)
+                    .focusable()
             )
 
             Spacer(modifier = Modifier.height(spacerSize))
