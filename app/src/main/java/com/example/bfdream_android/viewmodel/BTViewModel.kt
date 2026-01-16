@@ -161,7 +161,7 @@ class BTViewModel(private val context: Context) : ViewModel() {
             if (isScanning) {
                 stopScan()
                 if (targetDevice == null) {
-                    _connectionState.update { BleConnectionState.Error("주변에서 버스($targetDeviceName)를 찾을 수 없습니다.") }
+                    _connectionState.update { BleConnectionState.Error("") }
                     _isSending.update { false }
                 }
             }

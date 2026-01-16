@@ -11,6 +11,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.Settings
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -55,6 +56,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -90,7 +92,9 @@ fun MainScreen(
         factory = BTViewModelFactory(LocalContext.current.applicationContext)
     ),
 ) {
+    val view = LocalView.current
     val appContext = LocalContext.current.applicationContext
+
     val busViewModel: BusViewModel = viewModel(
         factory = BusViewModelFactory(
             appContext,
@@ -156,6 +160,7 @@ fun MainScreen(
                 Button(onClick = {
                     showSuccessDialog = false
                     btViewModel.resetState()
+                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                 }) {
                     Text(stringResource(R.string.btn_confirm))
                 }
@@ -174,15 +179,23 @@ fun MainScreen(
                 )
             ) },
             confirmButton = {
-                Button(onClick = {
-                    btViewModel.sendCourtesySeatNotification(selectedBusInfo!!.number)
-                    showConfirmDialog = false
-                }) {
+                Button(
+                    onClick = {
+                        btViewModel.sendCourtesySeatNotification(selectedBusInfo!!.number)
+                        showConfirmDialog = false
+                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                    }
+                ) {
                     Text(stringResource(R.string.btn_confirm))
                 }
             },
             dismissButton = {
-                Button(onClick = { showConfirmDialog = false }) {
+                Button(
+                    onClick = {
+                        showConfirmDialog = false
+                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                    }
+                ) {
                     Text(stringResource(R.string.btn_cancel))
                 }
             }
@@ -202,7 +215,10 @@ fun MainScreen(
                 )
             ) },
             confirmButton = {
-                Button(onClick = { btViewModel.resetState() }) {
+                Button(onClick = {
+                    btViewModel.resetState()
+                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                }) {
                     Text(stringResource(R.string.btn_confirm))
                 }
             }
@@ -269,6 +285,7 @@ fun MainScreen(
                         val intent = Intent(Settings.ACTION_SETTINGS)
                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                         appContext.startActivity(intent)
+                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                     }
                 ) {
                     Text("설정으로 이동")
@@ -346,6 +363,7 @@ fun MainScreen(
                             if (selectedBusId != null && !isSending) {
                                 showConfirmDialog = true
                             }
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                         },
                         modifier = Modifier.fillMaxSize(),
                         shape = CircleShape,

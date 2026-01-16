@@ -27,8 +27,8 @@ android {
         applicationId = "com.bfdream.comfortablemove"
         minSdk = 33
         targetSdk = 36
-        versionCode = 22
-        versionName = "v 1.2.2"
+        versionCode = 23
+        versionName = "v 1.2.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

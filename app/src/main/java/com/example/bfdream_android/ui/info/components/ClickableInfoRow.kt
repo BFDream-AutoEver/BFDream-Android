@@ -24,10 +24,13 @@ import com.example.bfdream_android.ui.theme.pr_PeriwinkleBlue
 @Composable
 fun ClickableInfoRow(text: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(
-            horizontal = 16.dp,
-            vertical = 20.dp
-        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(
+                horizontal = 16.dp,
+                vertical = 20.dp
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(

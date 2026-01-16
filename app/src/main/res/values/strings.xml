@@ -48,8 +48,8 @@
 
     <string name="dialog_send_success_title">알림 전송 성공</string>
     <string name="dialog_send_confirm_title">%s번 버스에 배려석 알림을 전송하시겠습니까?</string>
-    <string name="dialog_send_error_title">버스 배려석 알림 전송에 실패하였습니다.</string>
-    <string name="dialog_send_error_desc">다시 한 번 시도해주세요\n%s</string>
+    <string name="dialog_send_error_title">알림 기기를 찾을 수 없음</string>
+    <string name="dialog_send_error_desc">해당 버스에 알림 기기가 설치되지 않았거나,\n현재 신호가 약하여 연결할 수 없습니다.</string>
 
     <string name="bus_empty_nearby">주변에 운행중인 버스가 없습니다.</string>
     <string name="bus_load_error">버스 정보를 불러오는 데 실패했습니다.</string>

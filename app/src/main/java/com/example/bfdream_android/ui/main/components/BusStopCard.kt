@@ -1,5 +1,6 @@
 package com.example.bfdream_android.ui.main.components
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -29,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,6 +48,8 @@ fun BusStopCard(
     onBusSelected: (String?) -> Unit,
     onRefresh: () -> Unit
 ) {
+    val view = LocalView.current
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -77,7 +81,10 @@ fun BusStopCard(
                     )
                 }
                 IconButton(
-                    onClick = onRefresh,
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        onRefresh
+                    },
                     enabled = !isRefreshing
                 ) {
                     if (isRefreshing) {
@@ -121,6 +128,7 @@ fun BusStopCard(
                                 if (bus.id == selectedBusId) null
                                 else bus.id
                             onBusSelected(newSelection)
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                         }
                     )
                     if (index < stop.buses.lastIndex) {

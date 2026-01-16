@@ -2,6 +2,7 @@ package com.example.bfdream_android.ui.onboarding
 
 import android.Manifest
 import android.os.Build
+import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +49,7 @@ import kotlinx.coroutines.launch
 fun OnboardScreen(
     onComplete: () -> Unit
 ) {
+    val view = LocalView.current
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val buttonSize = screenHeight * 0.2f
@@ -171,7 +174,10 @@ fun OnboardScreen(
         // 버튼
         if (pagerState.currentPage == pages.size - 1) {
             Button(
-                onClick = { permissionLauncher.launch(permissionsToRequest) },
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                    permissionLauncher.launch(permissionsToRequest)
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = bt_RoyalViolet,
                     contentColor = pr_White,
@@ -189,6 +195,7 @@ fun OnboardScreen(
         } else {
             Button(
                 onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                     scope.launch {
                         pagerState.animateScrollToPage(pagerState.currentPage + 1)
                     }

@@ -1,5 +1,6 @@
 package com.example.bfdream_android.ui.info
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -61,9 +63,12 @@ fun InfoScreen(
         factory = BTViewModelFactory(LocalContext.current.applicationContext)
     )
 ) {
+    val view = LocalView.current
+
     val uriHandler = LocalUriHandler.current
     var showExternalLinkDialog by remember { mutableStateOf(false) }
     var selectedUrl by remember { mutableStateOf("") }
+    var selectedTitle by remember { mutableStateOf("") }
 
     val inquiryUrl = "https://forms.gle/rnSD44sUEuy1nLaH6"
     val policyUrl = "https://important-hisser-903.notion.site/10-22-ver-29a65f12c44480b6b591e726c5c80f89?pvs=74"
@@ -86,7 +91,9 @@ fun InfoScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack
+                    ) {
                         Icon(
                             Icons.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.desc_back),
@@ -137,7 +144,10 @@ fun InfoScreen(
                         text = stringResource(R.string.info_sound_title),
                         subText = stringResource(R.string.info_sound_desc),
                         checked = isSoundOn,
-                        onCheckedChange = { btViewModel.toggleSound(it) }
+                        onCheckedChange = {
+                            btViewModel.toggleSound(it)
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        }
                     )
                     Divider(color = Color.LightGray.copy(alpha = 0.4f))
 
@@ -150,7 +160,9 @@ fun InfoScreen(
                     ClickableInfoRow(
                         text = stringResource(R.string.info_inquiry),
                         onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                             selectedUrl = inquiryUrl
+                            selectedTitle = "앱 문의"
                             showExternalLinkDialog = true
                         },
                     )
@@ -159,7 +171,9 @@ fun InfoScreen(
                     ClickableInfoRow(
                         text = stringResource(R.string.info_policy),
                         onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                             selectedUrl = policyUrl
+                            selectedTitle = "개인정보 처리 방침 및 이용약관"
                             showExternalLinkDialog = true
                         },
                     )
@@ -171,11 +185,12 @@ fun InfoScreen(
                     onDismissRequest = { showExternalLinkDialog = false },
                     title = { Text(text = "외부 링크 이동") },
                     text = {
-                        Text(text = "선택하신 페이지로 이동하시겠습니까?\n앱을 벗어나 브라우저가 실행됩니다.")
+                        Text(text = "'${selectedTitle}' 페이지로 이동하시겠습니까?\n앱을 벗어나 브라우저가 실행됩니다.")
                     },
                     confirmButton = {
                         TextButton(
                             onClick = {
+                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                                 // 확인 버튼 클릭 시 실제 이동
                                 if (selectedUrl.isNotEmpty()) {
                                     uriHandler.openUri(selectedUrl)
@@ -188,7 +203,10 @@ fun InfoScreen(
                     },
                     dismissButton = {
                         TextButton(
-                            onClick = { showExternalLinkDialog = false }
+                            onClick = {
+                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                showExternalLinkDialog = false
+                            }
                         ) {
                             Text("취소")
                         }
