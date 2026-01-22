@@ -158,7 +158,10 @@ fun MainScreen(
                 Button(onClick = {
                     showSuccessDialog = false
                     btViewModel.resetState()
-                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                    view.performHapticFeedback(
+                        HapticFeedbackConstants.CLOCK_TICK,
+                        HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    )
                 }) {
                     Text(stringResource(R.string.btn_confirm))
                 }
@@ -181,7 +184,10 @@ fun MainScreen(
                     onClick = {
                         btViewModel.sendCourtesySeatNotification(selectedBusInfo!!.number)
                         showConfirmDialog = false
-                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        view.performHapticFeedback(
+                            HapticFeedbackConstants.CLOCK_TICK,
+                            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                        )
                     }
                 ) {
                     Text(stringResource(R.string.btn_confirm))
@@ -191,7 +197,10 @@ fun MainScreen(
                 Button(
                     onClick = {
                         showConfirmDialog = false
-                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        view.performHapticFeedback(
+                            HapticFeedbackConstants.CLOCK_TICK,
+                            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                        )
                     }
                 ) {
                     Text(stringResource(R.string.btn_cancel))
@@ -215,7 +224,10 @@ fun MainScreen(
             confirmButton = {
                 Button(onClick = {
                     btViewModel.resetState()
-                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                    view.performHapticFeedback(
+                        HapticFeedbackConstants.CLOCK_TICK,
+                        HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    )
                 }) {
                     Text(stringResource(R.string.btn_confirm))
                 }
@@ -283,7 +295,10 @@ fun MainScreen(
                         val intent = Intent(Settings.ACTION_SETTINGS)
                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                         appContext.startActivity(intent)
-                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        view.performHapticFeedback(
+                            HapticFeedbackConstants.CLOCK_TICK,
+                            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                        )
                     }
                 ) {
                     Text("설정으로 이동")
@@ -348,7 +363,6 @@ fun MainScreen(
                             .background(color = pr_White, shape = RoundedCornerShape(300.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
-//                        CircularProgressIndicator(modifier = Modifier.size(100.dp))
                         LoadingIndicator(
                             modifier = Modifier.size(screenWidth * 0.25f),
                             color = Color(0xFFA1ACF9)
@@ -372,8 +386,11 @@ fun MainScreen(
                             .clickable {
                                 if (selectedBusId != null && !isSending) {
                                     showConfirmDialog = true
+                                    view.performHapticFeedback(
+                                        HapticFeedbackConstants.CLOCK_TICK,
+                                        HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                                    )
                                 }
-                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                             }
                             .size(buttonSize)
                             .clip(CircleShape),

@@ -83,8 +83,11 @@ fun BusStopCard(
                 }
                 IconButton(
                     onClick = {
-                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                        onRefresh
+                        view.performHapticFeedback(
+                            HapticFeedbackConstants.CLOCK_TICK,
+                            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                        )
+                        onRefresh()
                     },
                     enabled = !isRefreshing
                 ) {
@@ -129,7 +132,10 @@ fun BusStopCard(
                                 if (bus.id == selectedBusId) null
                                 else bus.id
                             onBusSelected(newSelection)
-                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            view.performHapticFeedback(
+                                HapticFeedbackConstants.CLOCK_TICK,
+                                HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                            )
                         }
                     )
                     if (index < stop.buses.lastIndex) {

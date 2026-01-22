@@ -146,7 +146,10 @@ fun InfoScreen(
                         checked = isSoundOn,
                         onCheckedChange = {
                             btViewModel.toggleSound(it)
-                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            view.performHapticFeedback(
+                                HapticFeedbackConstants.CLOCK_TICK,
+                                HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                            )
                         }
                     )
                     Divider(color = Color.LightGray.copy(alpha = 0.4f))
@@ -160,7 +163,10 @@ fun InfoScreen(
                     ClickableInfoRow(
                         text = stringResource(R.string.info_inquiry),
                         onClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            view.performHapticFeedback(
+                                HapticFeedbackConstants.CLOCK_TICK,
+                                HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                            )
                             selectedUrl = inquiryUrl
                             selectedTitle = "앱 문의"
                             showExternalLinkDialog = true
@@ -171,7 +177,10 @@ fun InfoScreen(
                     ClickableInfoRow(
                         text = stringResource(R.string.info_policy),
                         onClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            view.performHapticFeedback(
+                                HapticFeedbackConstants.CLOCK_TICK,
+                                HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                            )
                             selectedUrl = policyUrl
                             selectedTitle = "개인정보 처리 방침 및 이용약관"
                             showExternalLinkDialog = true
@@ -190,7 +199,10 @@ fun InfoScreen(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                view.performHapticFeedback(
+                                    HapticFeedbackConstants.CLOCK_TICK,
+                                    HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                                )
                                 // 확인 버튼 클릭 시 실제 이동
                                 if (selectedUrl.isNotEmpty()) {
                                     uriHandler.openUri(selectedUrl)
@@ -204,7 +216,10 @@ fun InfoScreen(
                     dismissButton = {
                         TextButton(
                             onClick = {
-                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                view.performHapticFeedback(
+                                    HapticFeedbackConstants.CLOCK_TICK,
+                                    HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                                )
                                 showExternalLinkDialog = false
                             }
                         ) {

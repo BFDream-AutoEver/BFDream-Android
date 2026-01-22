@@ -23,6 +23,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
@@ -55,15 +56,18 @@ class BusViewModel(
 
     private val TAG = "BusViewModel"
 
+    private var autoRefreshJob: Job? = null
+
     init {
         loadBusDataFromCurrentLocation()
-        startAutoRefresh()
     }
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     fun loadBusDataFromCurrentLocation() {
+        autoRefreshJob?.cancel()
+
         Log.d(TAG, "loadBusDataFromCurrentLocation: 시작")
 
         viewModelScope.launch {
@@ -191,6 +195,7 @@ class BusViewModel(
                 _busApiState.value = BusApiState.Error("버스 정보를 가져오는 중 오류가 발생했습니다: ${e.message}")
             } finally {
                 _isRefreshing.value = false
+                scheduleNextAutoRefresh()
             }
         }
     }
@@ -206,18 +211,30 @@ class BusViewModel(
         }
     }
 
+    private fun scheduleNextAutoRefresh() {
+        // 기존 타이머가 있다면 취소 (중복 실행 방지)
+        autoRefreshJob?.cancel()
+
+        // 60초 뒤에 실행하도록 예약
+        autoRefreshJob = viewModelScope.launch {
+            delay(60000L) // 1분 대기
+            Log.d(TAG, "자동 갱신 실행 (1분 경과)")
+            loadBusDataFromCurrentLocation()
+        }
+    }
+
     @SuppressLint("MissingPermission")
     private suspend fun getCurrentLocation(): android.location.Location? {
         val cancellationTokenSource = CancellationTokenSource()
 
         try {
-            val lastLocation = fusedLocationClient.lastLocation.await()
-            if (lastLocation != null) {
-                val timeSinceLast = (System.currentTimeMillis() - lastLocation.time) / 1000
-                if (timeSinceLast < 60) {
-                    return lastLocation
-                }
-            }
+//            val lastLocation = fusedLocationClient.lastLocation.await()
+//            if (lastLocation != null) {
+//                val timeSinceLast = (System.currentTimeMillis() - lastLocation.time) / 1000
+//                if (timeSinceLast < 60) {
+//                    return lastLocation
+//                }
+//            }
 
             return withTimeoutOrNull(10_000) {
                 fusedLocationClient.getCurrentLocation(

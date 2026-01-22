@@ -175,7 +175,10 @@ fun OnboardScreen(
         if (pagerState.currentPage == pages.size - 1) {
             Button(
                 onClick = {
-                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                    view.performHapticFeedback(
+                        HapticFeedbackConstants.CLOCK_TICK,
+                        HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    )
                     permissionLauncher.launch(permissionsToRequest)
                 },
                 colors = ButtonDefaults.buttonColors(
@@ -195,7 +198,10 @@ fun OnboardScreen(
         } else {
             Button(
                 onClick = {
-                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                    view.performHapticFeedback(
+                        HapticFeedbackConstants.CLOCK_TICK,
+                        HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    )
                     scope.launch {
                         pagerState.animateScrollToPage(pagerState.currentPage + 1)
                     }
