@@ -53,14 +53,26 @@ fun BusRow(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Text(
-                text = bus.number,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = bus.color,
-                fontSize = 18.sp
-            )
-            Row () {
+            Row (verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = bus.number,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = bus.color,
+                    fontSize = 18.sp
+                )
+                if (bus.type.isNotEmpty()) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = bus.type,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            Row (verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = bus.arrivalTime,
                     style = MaterialTheme.typography.bodyMedium,
@@ -78,6 +90,7 @@ fun BusRow(
                     )
                 }
             }
+
             Text(
                 text = stringResource(
                     id = R.string.bus_direction,
@@ -88,7 +101,9 @@ fun BusRow(
                 fontSize = 12.sp
             )
         }
+
         Spacer(modifier = Modifier.width(16.dp))
+
         Icon(
             imageVector = Icons.Filled.CheckCircle,
             contentDescription =

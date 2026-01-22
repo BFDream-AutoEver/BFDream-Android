@@ -32,7 +32,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -414,14 +413,6 @@ fun MainScreen(
 
             // --- 2. 스크롤 가능한 버스 목록 영역 ---
             when (val state = busApiState) {
-                is BusApiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = pr_White)
-                    }
-                }
                 is BusApiState.Success -> {
                     if (state.busStops.isEmpty()) {
                         EmptyBusStopCard(
@@ -454,7 +445,7 @@ fun MainScreen(
                         onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
                     )
                 }
-                is BusApiState.Idle -> {
+                is BusApiState.Idle, BusApiState.Loading -> {
                     EmptyBusStopCard(
                         message = stringResource(R.string.bus_loading),
                         isRefreshing = isRefreshing,

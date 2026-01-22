@@ -24,13 +24,85 @@ data class BusInfo(
     val id: String,
     val number: String,
     val color: Color,
+    val type: String,
     val arrivalTime: String,
     val adirection: String,
     val congestionStatus: String,
     val congestionColor: Color
 )
 
-// CSV 파일 읽기용 데이터 클래스
+enum class BusRouteType(val displayName: String) {
+    GANGSEON("간선"),   // 파랑 (3자리)
+    JISEON("지선"),     // 초록 (4자리)
+    SUNHWAN("순환"),    // 노랑 (2자리)
+    GWANGYEOK("광역"),  // 빨강 (9로 시작하는 4자리)
+    MAEUL("마을"),      // 초록 (기타 문자 포함)
+    SIMYA("심야"),      // 파랑 (N으로 시작)
+    GONGHANG("공항"),   // iOS에서는 별도 색상, 여기선 회색 또는 초록 사용 가능
+    UNKNOWN("");
+
+    val color: Color
+        get() = when (this) {
+            GANGSEON, SIMYA -> bl_TrunkBus_NBus
+            JISEON, MAEUL -> bl_FeederBus_TownBus
+            SUNHWAN -> bl_CircularBus
+            GWANGYEOK -> bl_WideAreaBus
+            GONGHANG -> Color.Gray // 공항버스는 iOS에서 별도 색상이므로 구분 (필요시 bl_WideAreaBus 등 변경)
+            UNKNOWN -> Color.Gray
+        }
+
+    companion object {
+        fun from(busNumber: String?): BusRouteType {
+            if (busNumber.isNullOrBlank()) return UNKNOWN
+            val trimmed = busNumber.trim()
+
+            // 심야버스: N으로 시작
+            if (trimmed.uppercase().startsWith("N")) {
+                return SIMYA
+            }
+
+            // 숫자만 추출
+            val digits = trimmed.filter { it.isDigit() }
+            val length = digits.length
+
+            if (length == 0) return UNKNOWN
+
+            // 공항버스: 6으로 시작하는 4자리
+            if (length == 4 && digits.startsWith("6")) {
+                return GONGHANG
+            }
+
+            // 광역버스: 9로 시작하는 4자리
+            if (length == 4 && digits.startsWith("9")) {
+                return GWANGYEOK
+            }
+
+            // 간선버스: 3자리
+            if (length == 3) {
+                return GANGSEON
+            }
+
+            // 지선버스: 4자리 (위의 6, 9 시작 제외됨)
+            if (length == 4) {
+                return JISEON
+            }
+
+            // 순환버스: 2자리
+            if (length == 2) {
+                return SUNHWAN
+            }
+
+            // 마을버스: 숫자가 아닌 문자가 포함된 경우 (N 제외)
+            if (trimmed.any { !it.isDigit() && !it.equals('N', ignoreCase = true) }) {
+                return MAEUL
+            }
+
+            return UNKNOWN
+        }
+    }
+}
+
+// CSV 파일 읽기용 데이터 클래스 (기존 유지)
 data class LocalBusRoute(
     val routeId: String,
     val routeName: String,
@@ -39,7 +111,7 @@ data class LocalBusRoute(
     val stationName: String
 )
 
-// --- API 응답 모델 ---
+// --- API 응답 모델 (기존 유지) ---
 @Root(name = "msgHeader", strict = false)
 data class MsgHeader(
     @field:Element(name = "headerCd", required = false)
@@ -99,54 +171,20 @@ data class ArrivalInfoItem(
     @field:Element(name = "adirection", required = false)
     var adirection: String? = null,
 
-    // [수정] 혼잡도 관련 태그 3종 세트 (API 버전에 따라 다름)
     @field:Element(name = "congestion", required = false)
     var congestion: String? = null,
     @field:Element(name = "congestion1", required = false)
     var congestion1: String? = null,
-    @field:Element(name = "reride_Num1", required = false) // XML에서 주로 사용되는 태그
+    @field:Element(name = "reride_Num1", required = false)
     var rerideNum1: String? = null
 )
 
 // --- 유틸리티 및 상수 ---
 
-val CongestionComfort = state_Comfort // 여유 (Green)
-val CongestionNormal = state_Normal  // 보통 (Yellow)
-val CongestionCrowded = state_Crowded // 혼잡 (Red)
+val CongestionComfort = state_Comfort
+val CongestionNormal = state_Normal
+val CongestionCrowded = state_Crowded
 val CongestionUnknown = Color.Gray
-
-val BusBlue = bl_TrunkBus_NBus
-val BusGreen = bl_FeederBus_TownBus
-val BusRed = bl_WideAreaBus
-val BusYellow = bl_CircularBus
-
-fun getBusColorByRouteType(routeType: String?): Color {
-    return when (routeType) {
-        "1", "2", "5", "6" -> BusGreen
-        "3" -> BusBlue
-        "4" -> BusRed
-        "7" -> BusYellow
-        else -> Color.Gray
-    }
-}
-
-fun getBusColorByNumber(busNumber: String?): Color {
-    if (busNumber.isNullOrBlank()) return Color.Gray
-    val trimmed = busNumber.trim()
-    if (trimmed.startsWith("N", ignoreCase = true)) return BusBlue
-
-    val digits = trimmed.filter { it.isDigit() }
-    val length = digits.length
-
-    return when {
-        length == 4 && digits.startsWith('9') -> BusRed
-        length == 3 -> BusBlue
-        length == 4 -> BusGreen
-        length == 2 -> BusYellow
-        trimmed.any { !it.isDigit() && !it.equals('N', ignoreCase = true) } -> BusGreen
-        else -> Color.Gray
-    }
-}
 
 // 혼잡도 코드 -> 텍스트 변환
 fun getCongestionStatus(code: String?): String {

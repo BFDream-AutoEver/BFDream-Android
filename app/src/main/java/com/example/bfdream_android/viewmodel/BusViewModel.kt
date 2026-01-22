@@ -1,5 +1,8 @@
 package com.example.bfdream_android.viewmodel
 
+// [수정] iOS 로직인 getBusColorByNumber를 import합니다.
+// [수정] CoordinateConverter import 제거
+// import com.example.bfdream_android.utils.CoordinateConverter
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -11,14 +14,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.bfdream_android.data.BusDataRepository
 import com.example.bfdream_android.data.BusInfo
+import com.example.bfdream_android.data.BusRouteType
 import com.example.bfdream_android.data.BusStop
-// [수정] iOS 로직인 getBusColorByNumber를 import합니다.
-import com.example.bfdream_android.data.getBusColorByNumber
 import com.example.bfdream_android.data.getCongestionColor
 import com.example.bfdream_android.data.getCongestionStatus
 import com.example.bfdream_android.network.BusApiService
-// [수정] CoordinateConverter import 제거
-// import com.example.bfdream_android.utils.CoordinateConverter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -149,14 +149,17 @@ class BusViewModel(
                                         ?: bus.congestion1
                                         ?: bus.rerideNum1
 
+                                    // [추가] 노선 유형 및 색상 결정 (iOS 로직 적용)
+                                    val routeType = BusRouteType.from(busNumber)
+
                                     // 8. [데이터 가공]
                                     BusInfo(
                                         id = bus.busRouteId!!,
                                         number = busNumber,
-                                        color = getBusColorByNumber(busNumber),
+                                        color = routeType.color,
+                                        type = routeType.displayName,
                                         arrivalTime = bus.arrivalMsg1 ?: "정보 없음",
                                         adirection = bus.adirection ?: "",
-                                        // [수정] 찾은 코드를 전달
                                         congestionStatus = getCongestionStatus(congestionCode),
                                         congestionColor = getCongestionColor(congestionCode)
                                     )
