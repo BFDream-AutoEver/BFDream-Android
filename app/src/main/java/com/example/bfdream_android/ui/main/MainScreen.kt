@@ -14,7 +14,7 @@ import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,15 +24,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -52,7 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -72,11 +71,10 @@ import com.example.bfdream_android.data.BusStop
 import com.example.bfdream_android.network.BusApiService
 import com.example.bfdream_android.ui.main.components.BusStopCard
 import com.example.bfdream_android.ui.main.components.EmptyBusStopCard
+import com.example.bfdream_android.ui.main.components.LoadingIndicator
 import com.example.bfdream_android.ui.theme.BFDreamAndroidTheme
 import com.example.bfdream_android.ui.theme.pr_LavenderPurple
-import com.example.bfdream_android.ui.theme.pr_PeriwinkleBlue
 import com.example.bfdream_android.ui.theme.pr_White
-import com.example.bfdream_android.ui.theme.tx_Black
 import com.example.bfdream_android.viewmodel.BTViewModel
 import com.example.bfdream_android.viewmodel.BTViewModelFactory
 import com.example.bfdream_android.viewmodel.BusApiState
@@ -117,7 +115,7 @@ fun MainScreen(
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
     val screenHeight = configuration.screenHeightDp.dp
-    val buttonSize = screenWidth * 0.55f
+    val buttonSize = screenWidth * 0.6f
 
     // --- 선택된 버스 정보 찾기 ---
     val selectedBusInfo: BusInfo? by remember(selectedBusId, busApiState) {
@@ -343,62 +341,46 @@ fun MainScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
 
-                val interactionSource = remember { MutableInteractionSource() }
-
-                Box(
-                    modifier = Modifier.size(buttonSize),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // 그림자
+                if (isSending) {
                     Box(
                         modifier = Modifier
-                            .matchParentSize()
-                            .offset(y = 4.dp)
-                            .background(tx_Black.copy(alpha = 0.2f), CircleShape)
-                            .blur(radius = 10.dp)
-                    )
-                    // 버튼
-                    Button(
-                        onClick = {
-                            if (selectedBusId != null && !isSending) {
-                                showConfirmDialog = true
-                            }
-                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                        },
-                        modifier = Modifier.fillMaxSize(),
-                        shape = CircleShape,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = pr_PeriwinkleBlue,
-                            disabledContainerColor = pr_White,
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
-                        interactionSource = interactionSource,
-                        enabled =
-                            selectedBusId != null &&
-                            !isSending &&
-                            (currentBtState !is BTViewModel.BleConnectionState.Error)
+                            .size(screenWidth * 0.57f)
+                            .background(color = pr_White, shape = RoundedCornerShape(300.dp)),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        if (isSending) {
-                            CircularProgressIndicator(modifier = Modifier.size(100.dp))
-                        } else {
-                            val imageResource =
-                                if (selectedBusInfo != null) R.drawable.main_button_enabled
-                                else R.drawable.main_button_default
-
-                            val contentDesc =
-                                if (selectedBusInfo != null) stringResource(R.string.main_btn_send_enabled)
-                                else stringResource(R.string.main_btn_send_disabled)
-
-                            Image(
-                                painter = painterResource(id = imageResource),
-                                contentDescription = contentDesc,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+//                        CircularProgressIndicator(modifier = Modifier.size(100.dp))
+                        LoadingIndicator(
+                            modifier = Modifier.size(screenWidth * 0.25f),
+                            color = Color(0xFFA1ACF9)
+                        )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(screenHeight * 0.02f))
+                    Spacer(modifier = Modifier.height(screenHeight * 0.035f))
+                } else {
+                    val imageResource =
+                        if (selectedBusInfo != null) R.drawable.main_button_on
+                        else R.drawable.main_button_off
+
+                    val contentDesc =
+                        if (selectedBusInfo != null) stringResource(R.string.main_btn_send_enabled)
+                        else stringResource(R.string.main_btn_send_disabled)
+
+                    Image(
+                        painter = painterResource(id = imageResource),
+                        contentDescription = contentDesc,
+                        modifier = Modifier
+                            .clickable {
+                                if (selectedBusId != null && !isSending) {
+                                    showConfirmDialog = true
+                                }
+                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            }
+                            .size(buttonSize)
+                            .clip(CircleShape),
+                    )
+
+                    Spacer(modifier = Modifier.height(screenHeight * 0.02f))
+                }
 
                 Text(
                     text =

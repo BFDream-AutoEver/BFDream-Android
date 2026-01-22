@@ -68,15 +68,16 @@ fun BusStopCard(
                         text = stop.name,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        fontSize = 15.sp,
                         color = tx_Black,
                     )
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = stringResource(R.string.bus_stop_distance_info),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
-                        maxLines = 1,
-                        fontSize = 12.sp,
+                        fontSize = 9.sp,
+                        maxLines = 2,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                 }
