@@ -15,6 +15,7 @@ import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,14 +52,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -79,6 +88,7 @@ import com.example.bfdream_android.viewmodel.BTViewModelFactory
 import com.example.bfdream_android.viewmodel.BusApiState
 import com.example.bfdream_android.viewmodel.BusViewModel
 import com.example.bfdream_android.viewmodel.BusViewModelFactory
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,6 +101,10 @@ fun MainScreen(
 ) {
     val view = LocalView.current
     val appContext = LocalContext.current.applicationContext
+
+    val focusManager = LocalFocusManager.current
+    val logoFocusRequester = remember { FocusRequester() }
+    val buttonFocusRequester = remember { FocusRequester() }
 
     val busViewModel: BusViewModel = viewModel(
         factory = BusViewModelFactory(
@@ -127,6 +141,19 @@ fun MainScreen(
                     .flatMap { it.buses }
                     .find { it.id == selectedBusId }
             }
+        }
+    }
+
+    // --- TalkBack 포커싱 ---
+    LaunchedEffect(Unit) {
+        delay(300)
+        logoFocusRequester.requestFocus()
+    }
+    LaunchedEffect(selectedBusId) {
+        if (selectedBusId != null) {
+            focusManager.clearFocus()
+            delay(600)
+            buttonFocusRequester.requestFocus()
         }
     }
 
@@ -338,7 +365,7 @@ fun MainScreen(
                         Image(
                             painter = painterResource(R.drawable.main_title_logo_new),
                             contentDescription = "맘편한 이동",
-                            modifier = Modifier.size(126.dp)
+                            modifier = Modifier.size(126.dp).focusRequester(logoFocusRequester)
                         )
                     }
                 },
@@ -367,10 +394,16 @@ fun MainScreen(
                 .background(pr_LavenderPurple)
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
+                .semantics { isTraversalGroup = true }
         ) {
             // --- 1. 상단 고정 영역 (버튼 + 텍스트) ---
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        isTraversalGroup = true
+                        traversalIndex = 1f
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
@@ -398,10 +431,13 @@ fun MainScreen(
                         if (selectedBusInfo != null) stringResource(R.string.main_btn_send_enabled)
                         else stringResource(R.string.main_btn_send_disabled)
 
-                    Image(
-                        painter = painterResource(id = imageResource),
-                        contentDescription = contentDesc,
+                    Box(
+                        contentAlignment = Alignment.Center,
                         modifier = Modifier
+                            .size(buttonSize)
+                            .clip(CircleShape)
+                            .focusRequester(buttonFocusRequester)
+                            .focusable()
                             .clickable {
                                 if (selectedBusId != null && !isSending) {
                                     showConfirmDialog = true
@@ -413,9 +449,34 @@ fun MainScreen(
                                     showFailDialog = true
                                 }
                             }
-                            .size(buttonSize)
-                            .clip(CircleShape),
-                    )
+                            .semantics {
+                                role = Role.Button
+                                contentDescription =
+                                    if (selectedBusInfo != null) "알림 전송, 활성화됨"
+                                    else "알림 전송, 비활성화됨"
+                            }
+                    ) {
+                        Image(
+                            painter = painterResource(id = imageResource),
+                            contentDescription = null,
+                            modifier = Modifier
+//                                .focusRequester(buttonFocusRequester)
+//                                .clickable {
+//                                    if (selectedBusId != null && !isSending) {
+//                                        showConfirmDialog = true
+//                                        view.performHapticFeedback(
+//                                            HapticFeedbackConstants.CLOCK_TICK,
+//                                            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+//                                        )
+//                                    } else {
+//                                        showFailDialog = true
+//                                    }
+//                                }
+//                                .size(buttonSize)
+//                                .clip(CircleShape),
+                                .fillMaxSize()
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(screenHeight * 0.02f))
                 }
@@ -433,46 +494,57 @@ fun MainScreen(
                 Spacer(modifier = Modifier.height(screenHeight * 0.03f))
             }
 
-            // --- 2. 스크롤 가능한 버스 목록 영역 ---
-            when (val state = busApiState) {
-                is BusApiState.Success -> {
-                    if (state.busStops.isEmpty()) {
-                        EmptyBusStopCard(
-                            message = stringResource(R.string.bus_empty_nearby),
-                            isRefreshing = isRefreshing,
-                            onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
-                        )
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
-                        ) {
-                            items(state.busStops, key = { it.arsId }) { stop ->
-                                BusStopCard(
-                                    stop = stop,
-                                    selectedBusId = selectedBusId,
-                                    isRefreshing = isRefreshing,
-                                    onBusSelected = { btViewModel.selectBus(it) },
-                                    onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
-                                )
+            Box (
+                modifier = Modifier
+                    .fillMaxSize()
+                    .semantics {
+                        isTraversalGroup = true
+                        traversalIndex = -1f
+                    }
+            ) {
+                // --- 2. 스크롤 가능한 버스 목록 영역 ---
+                when (val state = busApiState) {
+                    is BusApiState.Success -> {
+                        if (state.busStops.isEmpty()) {
+                            EmptyBusStopCard(
+                                message = stringResource(R.string.bus_empty_nearby),
+                                isRefreshing = isRefreshing,
+                                onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                            )
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = PaddingValues(bottom = 16.dp)
+                            ) {
+                                items(state.busStops, key = { it.arsId }) { stop ->
+                                    BusStopCard(
+                                        stop = stop,
+                                        selectedBusId = selectedBusId,
+                                        isRefreshing = isRefreshing,
+                                        onBusSelected = { btViewModel.selectBus(it) },
+                                        onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                                    )
+                                }
                             }
                         }
                     }
-                }
-                is BusApiState.Error -> {
-                    EmptyBusStopCard(
-                        message = stringResource(R.string.bus_load_error),
-                        isRefreshing = isRefreshing,
-                        onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
-                    )
-                }
-                is BusApiState.Idle, BusApiState.Loading -> {
-                    EmptyBusStopCard(
-                        message = stringResource(R.string.bus_loading),
-                        isRefreshing = isRefreshing,
-                        onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
-                    )
+
+                    is BusApiState.Error -> {
+                        EmptyBusStopCard(
+                            message = stringResource(R.string.bus_load_error),
+                            isRefreshing = isRefreshing,
+                            onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                        )
+                    }
+
+                    is BusApiState.Idle, BusApiState.Loading -> {
+                        EmptyBusStopCard(
+                            message = stringResource(R.string.bus_loading),
+                            isRefreshing = isRefreshing,
+                            onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                        )
+                    }
                 }
             }
         }
