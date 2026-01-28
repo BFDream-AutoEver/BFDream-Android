@@ -109,6 +109,7 @@ fun MainScreen(
 
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+    var showFailDialog by remember { mutableStateOf(false) }
 
     // --- 화면 크기 가져오기 및 버튼 크기 계산 ---
     val configuration = LocalConfiguration.current
@@ -203,6 +204,25 @@ fun MainScreen(
                     }
                 ) {
                     Text(stringResource(R.string.btn_cancel))
+                }
+            }
+        )
+    }
+
+    // --- Fail Dialog (버스 선택 안하고 메인버튼 누르면) ---
+    if (showFailDialog) {
+        AlertDialog(
+            onDismissRequest = { showFailDialog = false },
+            title = { Text(stringResource(R.string.dialog_fail_title)) },
+            confirmButton = {
+                Button(onClick = {
+                    showFailDialog = false
+                    view.performHapticFeedback(
+                        HapticFeedbackConstants.CLOCK_TICK,
+                        HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    )
+                }) {
+                    Text(stringResource(R.string.btn_confirm))
                 }
             }
         )
@@ -389,6 +409,8 @@ fun MainScreen(
                                         HapticFeedbackConstants.CLOCK_TICK,
                                         HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
                                     )
+                                } else {
+                                    showFailDialog = true
                                 }
                             }
                             .size(buttonSize)
