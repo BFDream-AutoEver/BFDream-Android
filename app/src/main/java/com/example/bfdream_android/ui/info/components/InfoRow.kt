@@ -10,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.bfdream_android.ui.theme.pr_PeriwinkleBlue
@@ -35,7 +34,7 @@ fun InfoRow(text: String, value: String) {
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge,
-            color = Color.Gray,
+            color = pr_PeriwinkleBlue,
         )
     }
 }

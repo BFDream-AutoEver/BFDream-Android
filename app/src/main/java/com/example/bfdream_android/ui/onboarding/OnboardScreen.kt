@@ -60,7 +60,7 @@ fun OnboardScreen(
             R.drawable.onboard1,
             stringResource(R.string.onboard_1_title),
             stringResource(R.string.onboard_1_highlight),
-            0xFF5409DA, // bt_RoyalViolet
+//            0xFF5409DA, // bt_RoyalViolet
             stringResource(R.string.onboard_1_desc),
         ),
         OnboardPageData(
@@ -68,7 +68,7 @@ fun OnboardScreen(
             R.drawable.onboard2,
             stringResource(R.string.onboard_2_title),
             stringResource(R.string.onboard_2_highlight),
-            0xFF3F72AF, // se_OceanBlue
+//            0xFF3F72AF, // se_OceanBlue
             stringResource(R.string.onboard_2_desc),
         ),
         OnboardPageData(
@@ -76,7 +76,7 @@ fun OnboardScreen(
             R.drawable.onboard3,
             stringResource(R.string.onboard_3_title),
             stringResource(R.string.onboard_3_highlight),
-            0xFF4E71FF, // pr_PeriwinkleBlue
+//            0xFF4E71FF, // pr_PeriwinkleBlue
             stringResource(R.string.onboard_3_desc),
         ),
         OnboardPageData(
@@ -84,15 +84,15 @@ fun OnboardScreen(
             R.drawable.onboard4,
             stringResource(R.string.onboard_4_title),
             stringResource(R.string.onboard_4_highlight),
-            0xFFFFC0CB,
+//            0xFFFFC0CB,
             stringResource(R.string.onboard_4_desc),
         ),
         OnboardPageData(
             5,
-            R.drawable.info_logo,
+            R.drawable.info_logo_new,
             stringResource(R.string.onboard_permission_title),
             stringResource(R.string.onboard_permission_highlight),
-            0xFF5409DA, // bt_RoyalViolet
+//            0xFF5409DA, // bt_RoyalViolet
             isLast = true,
         )
     )

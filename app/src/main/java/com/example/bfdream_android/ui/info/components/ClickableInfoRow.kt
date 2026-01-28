@@ -14,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,7 +43,7 @@ fun ClickableInfoRow(text: String, onClick: () -> Unit) {
         Icon(
             imageVector = Icons.Default.KeyboardArrowRight,
             contentDescription = stringResource(R.string.desc_move),
-            tint = Color.Gray.copy(alpha = 0.7f),
+            tint = pr_PeriwinkleBlue,
             modifier = Modifier.size(26.dp)
         )
     }

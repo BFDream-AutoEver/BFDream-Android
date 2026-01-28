@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.example.bfdream_android.ui.theme.bt_RoyalViolet
-import com.example.bfdream_android.ui.theme.se_PaleGray
+import com.example.bfdream_android.ui.theme.pr_White
 
 @Composable
 fun PageIndicator(pageCount: Int, currentPage: Int) {
@@ -23,7 +23,7 @@ fun PageIndicator(pageCount: Int, currentPage: Int) {
         repeat(pageCount) { index ->
             val color =
                 if (currentPage == index) bt_RoyalViolet
-                else se_PaleGray
+                else pr_White
 
             Box(
                 modifier = Modifier

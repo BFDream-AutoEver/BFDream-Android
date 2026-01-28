@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bfdream_android.R
 import com.example.bfdream_android.data.BusInfo
+import com.example.bfdream_android.ui.theme.light_secondary_gray
 
 @Composable
 fun BusRow(
@@ -49,6 +50,7 @@ fun BusRow(
             modifier = Modifier.size(32.dp)
         )
         Spacer(modifier = Modifier.width(10.dp))
+
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(3.dp)
@@ -76,7 +78,7 @@ fun BusRow(
                 Text(
                     text = bus.arrivalTime,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
+                    color = Color.Black,
                     fontSize = 12.sp
                 )
                 if (bus.congestionStatus.isNotEmpty()) {
@@ -111,7 +113,7 @@ fun BusRow(
                 else stringResource(R.string.bus_select),
             tint =
                 if (isSelected) bus.color
-                else Color.LightGray,
+                else light_secondary_gray,
             modifier = Modifier.size(32.dp)
         )
     }

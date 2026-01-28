@@ -120,7 +120,7 @@ fun InfoScreen(
             Spacer(modifier = Modifier.height(screenHeight * 0.01f))
 
             Image(
-                painter = painterResource(id = R.drawable.info_logo),
+                painter = painterResource(id = R.drawable.info_logo_new),
                 contentDescription = stringResource(R.string.desc_app_logo),
                 modifier = Modifier.size(screenHeight * 0.24f)
             )

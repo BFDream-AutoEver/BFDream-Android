@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -36,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bfdream_android.R
+import com.example.bfdream_android.ui.theme.bt_RoyalViolet
 import com.example.bfdream_android.ui.theme.pr_White
 import kotlinx.coroutines.delay
 
@@ -44,7 +44,7 @@ data class OnboardPageData(
     val image: Int,
     val title: String,
     val titleHighlight: String,
-    val highlightColor: Long,
+//    val highlightColor: Long,
     val description: String = "",
     val isLast: Boolean = false,
 )
@@ -98,7 +98,8 @@ fun OnboardPage(
             val startIndex = data.title.indexOf(data.titleHighlight)
             if (startIndex != -1) {
                 addStyle(
-                    style = SpanStyle(color = Color(data.highlightColor)),
+//                    style = SpanStyle(color = Color(data.highlightColor)),
+                    style = SpanStyle(bt_RoyalViolet),
                     start = startIndex,
                     end = startIndex + data.titleHighlight.length
                 )

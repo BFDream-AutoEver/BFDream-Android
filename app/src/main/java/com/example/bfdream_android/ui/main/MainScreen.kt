@@ -336,7 +336,7 @@ fun MainScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
-                            painter = painterResource(R.drawable.main_title_logo),
+                            painter = painterResource(R.drawable.main_title_logo_new),
                             contentDescription = "맘편한 이동",
                             modifier = Modifier.size(126.dp)
                         )
@@ -391,8 +391,8 @@ fun MainScreen(
                     Spacer(modifier = Modifier.height(screenHeight * 0.035f))
                 } else {
                     val imageResource =
-                        if (selectedBusInfo != null) R.drawable.main_button_on
-                        else R.drawable.main_button_off
+                        if (selectedBusInfo != null) R.drawable.main_button_on_new
+                        else R.drawable.main_button_off_new
 
                     val contentDesc =
                         if (selectedBusInfo != null) stringResource(R.string.main_btn_send_enabled)
