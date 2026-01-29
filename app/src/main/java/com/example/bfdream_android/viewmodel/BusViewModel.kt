@@ -154,7 +154,7 @@ class BusViewModel(
 
                                     // 8. [데이터 가공]
                                     BusInfo(
-                                        id = bus.busRouteId!!,
+                                        id = "${bus.busRouteId}_${bus.adirection ?: ""}",
                                         number = busNumber,
                                         color = routeType.color,
                                         type = routeType.displayName,

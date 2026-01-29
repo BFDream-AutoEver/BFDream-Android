@@ -523,7 +523,10 @@ fun MainScreen(
                                         selectedBusId = selectedBusId,
                                         isRefreshing = isRefreshing,
                                         onBusSelected = { btViewModel.selectBus(it) },
-                                        onRefresh = { busViewModel.loadBusDataFromCurrentLocation() }
+                                        onRefresh = {
+                                            busViewModel.loadBusDataFromCurrentLocation()
+                                            btViewModel.resetState()
+                                        }
                                     )
                                 }
                             }
